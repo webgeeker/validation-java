@@ -1,0 +1,93 @@
+# ======os======
+#.*
+*.DS_Store
+Thumbs.db
+
+# ======temp files======
+*~
+~$*.xls*
+~$*.doc*
+*.swp
+*.bak
+
+# ======git======
+!.gitignore
+!.gitattributes
+!.gitkeep
+!.gitkeeper
+
+# ======apache======
+!.htaccess
+
+# ============================== IDEs ==============================
+
+# ======eclipse======
+#!.project
+!.cproject
+
+# ======hbuilder======
+.project
+
+# ======netbeans======
+nbproject/
+nbproject/private/
+
+# ======phpstorm======
+.idea/
+
+# ======visual studio======
+*.sln
+*.suo
+*.ncb
+*.opensdf
+*.filters
+*.sdf
+*.vspscc
+*.user
+ipch/
+#Debug/
+#Release/
+
+# ======xcode======
+*.mode1v3
+xcuserdata/
+xcshareddata/
+
+# ======vscode======
+.vscode
+
+# ======others======
+*.ntvs*
+*.njsproj
+
+# ============================== package manage ==============================
+
+# ======nodejs======
+# /node_modules
+/dist/
+npm-debug.log*
+
+# ======composer======
+# /vendor
+
+# ============================== frameworks ==============================
+
+# ======laravel======
+# .env
+!.env.example
+
+# ======vue-webpack======
+yarn-debug.log*
+yarn-error.log*
+test/unit/coverage
+test/e2e/reports
+selenium-debug.log
+
+# ======beego======
+/*.tmp
+/routers/commentsRouter_*.go
+
+# ============================== my project ==============================
+
+/target/
+*.iml
