@@ -24,6 +24,25 @@ public class ValidationTest
     public ValidationTest(String testName )
     {
         super( testName );
+
+        // 预热
+        try {
+            testValidateRequired();
+            testValidateInt();
+            testValidateStr();
+            testValidateStrLen();
+            testValidateStrOther();
+            testValidateRegexp();
+            testValidateBool();
+            testValidateFloat();
+            testValidateList();
+            testValidateArr();
+            testValidateMap();
+            testValidateCustomHint();
+            testValidateCompile();
+        } catch (Exception e) {
+            //
+        }
     }
 
     /**

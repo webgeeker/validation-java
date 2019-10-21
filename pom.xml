@@ -4,7 +4,7 @@
     <groupId>com.webgeeker</groupId>
     <artifactId>validation</artifactId>
     <packaging>jar</packaging>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.0.1</version>
     <name>validation</name>
     <url>http://maven.apache.org</url>
 
@@ -12,6 +12,31 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
     </properties>
+
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <scm>
+        <url>https://github.com/webgeeker/validation-java</url>
+        <connection>scm:git:git@github.com:webgeeker/validation-java.git</connection>
+        <developerConnection>scm:git:git@github.com:webgeeker/validation-java.git</developerConnection>
+    </scm>
+    <developers>
+        <developer>
+            <name>photondragon</name>
+            <email>photondragon@163.com</email>
+            <url>https://github.com/photondragon</url>
+        </developer>
+    </developers>
 
     <dependencies>
         <dependency>
