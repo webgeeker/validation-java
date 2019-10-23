@@ -235,9 +235,9 @@ public class Validation {
                 }
             } else {
                 if (key instanceof Integer) {
-                    validateArr(siblings, null, keyPrefix);
+                    siblings = validateArr(siblings, null, keyPrefix);
                     int idx = (Integer)key;
-                    if (idx < 0 || idx >= ((List<Object>) siblings).size())
+                    if (idx < 0 || idx >= ((List<Object>) siblings).size()) // idx<0 不可能出现, 因为compileKeyPath()已经过滤掉了这种情况
                         value = null;
                     else
                         value = ((List<Object>) siblings).get(idx);
@@ -258,7 +258,7 @@ public class Validation {
                 n++;
                 break;
             }
-        } // end for (; n < keysCount; n++)
+        } // end for keys
 
         // 到这里n表示当前的value是第几层
         if (n == keysCount) {
@@ -268,21 +268,77 @@ public class Validation {
         return null;
     }
 
+    /**
+     * 根据路径从参数数组中取值. 可以用于IfXxx中参数的取值
+     *
+     * 本函数里的代码与 _validate() 中的相似, 但是不可能合并成一个函数.
+     * 因为针对"comments[*]"这样的参数路径, _validate() 方法内部必须枚举数组
+     * 的每个元素, 一个个检测; 而本函数根本就不会遇到参数路径中带*号的情况, 因
+     * 为本函数只需要返回一个值, 带*号的话就不知道要返回哪个值了.
+     *
+     * @param params 原始参数
+     * @param keys 条件参数的路径中不能有 * 号, 否则就不知道取哪个值了
+     * @return null|Object
+     * @throws ValidationException 出错抛出异常
+     */
+    private static Object getParamValueForIf(Object params, List<Object> keys) throws ValidationException {
+
+        int keysCount = keys.size();
+
+        Object value = params;
+
+        String keyPath = "";
+        Object siblings = params;
+        int n = 0;
+        for (; n < keysCount; n++) {
+
+            Object key = keys.get(n);
+            if (key instanceof Integer) {
+                siblings = validateArr(siblings, null, keyPath);
+                int idx = (Integer) key;
+                if (idx < 0 || idx >= ((List<Object>) siblings).size())
+                    value = null;
+                else
+                    value = ((List<Object>) siblings).get(idx);
+            } else {
+                validateMap(siblings, null, keyPath);
+                value = ((Map<String, Object>) siblings).get(key);
+            }
+
+            if (keyPath.length() == 0)
+                keyPath = (String) key;
+            else if (key instanceof Integer || key.equals("*"))
+                keyPath = keyPath + "[" + key + "]";
+            else
+                keyPath = keyPath + "." + key;
+
+            if (value == null) {
+                n++;
+                break;
+            }
+            siblings = value;
+        } // end for keys
+
+        // 到这里n表示当前的value是第几层
+//        if (n == keysCount) {
+//        }
+
+        return value;
+    }
+
     private static ArrayList<Object> compileKeyPath(String keyPath) throws ValidationException {
         if (keyPath.length() == 0)
             throw new ValidationException("参数validations中包含空的参数名称");
 
         if (!keyPath.matches("^[a-zA-Z0-9_.\\[\\]*]+$"))
-            throw new ValidationException("非法的参数名称: " + keyPath);
+            throw new ValidationException("非法的参数名称“" + keyPath + "”");
 
-        String[] keys = ValidationUtils.split(keyPath, '.');
-        if (keys.length == 0)
-            throw new ValidationException("参数validations中包含非法的参数名称: " + keyPath);
+        String[] keys = ValidationUtils.split(keyPath, '.'); // 不可能返回空数组. $keys中的数组还没有解析
 
         ArrayList<Object> filteredKeys = new ArrayList<Object>();
         for (String key : keys) {
             if (key.length() == 0)
-                throw new ValidationException("“" + keyPath + "”中包含空的参数名: ");
+                throw new ValidationException("“" + keyPath + "”中包含空的参数名称");
 
             int i = key.indexOf('[');
             if (i == -1) { // 普通的key
@@ -299,11 +355,11 @@ public class Validation {
                 }
                 filteredKeys.add(key);
             } else if (i == 0) {
-                throw new ValidationException("“" + keyPath + "”中'['号前面没有变量名");
+                throw new ValidationException("“" + keyPath + "”中'['号前面没有参数名称");
             } else { // 嵌套的key
                 int j = key.indexOf(']');
                 if (j == -1)
-                    throw new ValidationException("“" + key + "”中的'['之后缺少']'");
+                    throw new ValidationException("“" + key + "”中的'['号之后缺少']'");
                 if (i > j)
                     throw new ValidationException("“" + key + "”中'[', ']'顺序颠倒了");
 
@@ -317,13 +373,13 @@ public class Validation {
                 filteredKeys.add(varName);
 
                 // 识别普通数组的索引值
-                String index = key.substring(i + 1, j - i - 1);
+                String index = key.substring(i + 1, j);
                 if (index.equals("*")) {
                     filteredKeys.add(index);
                 } else if (ValidationUtils.isNonNegativeInt(index)) {
                     filteredKeys.add(Integer.parseInt(index));
                 } else
-                    throw new ValidationException("“" + key + "”中的方括号[]之间只能包含数字或'*'号");
+                    throw new ValidationException("“" + key + "”中的方括号[]之间只能包含'*'号或数字");
 
                 // 尝试识别多维数组
                 int len = key.length();
@@ -334,15 +390,15 @@ public class Validation {
                         throw new ValidationException("“" + key + "”中的“[" + index + "]”之后包含非法字符");
                     j = key.indexOf(']', i);
                     if (j == -1)
-                        throw new ValidationException("“" + key + "”中的'['之后缺少']'");
+                        throw new ValidationException("“" + key + "”中的'['号之后缺少']'");
 
-                    index = key.substring(i + 1, j - i - 1);
+                    index = key.substring(i + 1, j);
                     if (index.equals("*")) {
                         filteredKeys.add(index);
                     } else if (ValidationUtils.isNonNegativeInt(index)) {
                         filteredKeys.add(Integer.parseInt(index));
                     } else
-                        throw new ValidationException("“" + key + "”中的方括号[]之间只能包含数字或'*'号");
+                        throw new ValidationException("“" + key + "”中的方括号[]之间只能包含*号或数字");
                 }
             }
         }
@@ -355,7 +411,7 @@ public class Validation {
     }
 
     public static void validateValue(Object value, String[] ruleStrings, String alias, boolean ignoreRequired) throws ValidationException {
-        if (alias == null)
+        if (alias == null || alias.length() == 0)
             alias = "Parameter";
         _validateValue(value, ruleStrings, alias, ignoreRequired, null, null);
     }
@@ -365,9 +421,6 @@ public class Validation {
             throw new ValidationException("没有提供验证规则");
 
         String[] validators = ruleStrings;
-
-        if (alias == null || alias.length() == 0)
-            alias = "UnknownParameter";
 
         /*
          * 一个参数可以有一条或多条validator, 检测是否通过的规则如下:
@@ -389,19 +442,123 @@ public class Validation {
             try {
                 int countOfIfs = validator.countOfIfs;
                 int countOfUnits = validatorUnits.size();
+
+                String aAlias = validator.alias != null ? validator.alias : alias;
+
                 int i = 0;
                 for (; i < countOfIfs; i++) {
-//                    Object[] validatorUnit = validatorUnits.get(i);
-//
-//                    String ifName = (String) validatorUnit[0];
-                    throw new ValidationException("暂未实现条件验证器");
+                    Object[] validatorUnit = validatorUnits.get(i);
+                    Integer ifValidatorType = (Integer) validatorUnit[0];
+                    String varKeyPath = (String) validatorUnit[1]; // 条件参数的路径
+
+                    Object ifParamValue;
+                    if (varKeyPath.startsWith(".")) { // 以.开头, 是相对路径
+                        String key = varKeyPath.substring(1); // 去掉开头的.号
+                        validateVarName(key, "IfXxx中的条件参数“" + key + "”不是合法的变量名", null);
+                        ifParamValue = ((HashMap<String, Object>)siblings).get(key);
+                    } else { // 绝对路径
+                        if (varKeyPath.contains("*"))
+                            throw new ValidationException("IfXxx中的条件参数“" + varKeyPath + "”中不得包含*号");
+                        ArrayList<Object> keys = compileKeyPath(varKeyPath);
+                        ifParamValue = getParamValueForIf(originParams, keys);
+                    }
+
+                    // 处理条件参数不存在的情况
+                    if (ignoreRequired) { // 忽略所有 Required 验证器
+                        if (value != null) { // 如果参数存在，则其依赖的条件参数也必须存在
+                            if (ifParamValue == null && // 依赖的条件参数不存在
+                                ifValidatorType != Type.IfExist &&
+                                ifValidatorType != Type.IfNotExist)
+                                throw new ValidationException("必须提供条件参数“" + varKeyPath + "”，因为“" + aAlias + "”的验证依赖它");
+                        } else { // 如果参数不存在，则该参数不检测
+                            return value;
+                        }
+                    } else { // 没有忽略 Required 验证器
+                        // 无论参数是否存在，则其依赖的条件参数都必须存在
+                        if (ifParamValue == null && // 依赖的条件参数不存在
+                            ifValidatorType != Type.IfExist &&
+                            ifValidatorType != Type.IfNotExist)
+                            throw new ValidationException("必须提供条件参数“" + varKeyPath + "”，因为“" + aAlias + "”的验证依赖它");
+                    }
+
+                    boolean ifResult;
+                    switch (ifValidatorType) {
+                        case Type.If:
+                            ifResult = checkIf(ifParamValue);
+                            break;
+                        case Type.IfNot:
+                            ifResult = checkIfNot(ifParamValue);
+                            break;
+                        case Type.IfTrue:
+                            ifResult = checkIfTrue(ifParamValue);
+                            break;
+                        case Type.IfFalse:
+                            ifResult = checkIfFalse(ifParamValue);
+                            break;
+                        case Type.IfExist:
+                            ifResult = checkIfExist(ifParamValue);
+                            break;
+                        case Type.IfNotExist:
+                            ifResult = checkIfNotExist(ifParamValue);
+                            break;
+                        case Type.IfIntEq:
+                            ifResult = checkIfIntEq(ifParamValue, (Integer) validatorUnit[2]);
+                            break;
+                        case Type.IfIntNe:
+                            ifResult = checkIfIntNe(ifParamValue, (Integer) validatorUnit[2]);
+                            break;
+                        case Type.IfIntGt:
+                            ifResult = checkIfIntGt(ifParamValue, (Integer) validatorUnit[2]);
+                            break;
+                        case Type.IfIntGe:
+                            ifResult = checkIfIntGe(ifParamValue, (Integer) validatorUnit[2]);
+                            break;
+                        case Type.IfIntLt:
+                            ifResult = checkIfIntLt(ifParamValue, (Integer) validatorUnit[2]);
+                            break;
+                        case Type.IfIntLe:
+                            ifResult = checkIfIntLe(ifParamValue, (Integer) validatorUnit[2]);
+                            break;
+                        case Type.IfIntIn:
+                            ifResult = checkIfIntIn(ifParamValue, (List<Integer>) validatorUnit[2]);
+                            break;
+                        case Type.IfIntNotIn:
+                            ifResult = checkIfIntNotIn(ifParamValue, (List<Integer>) validatorUnit[2]);
+                            break;
+                        case Type.IfStrEq:
+                            ifResult = checkIfStrEq(ifParamValue, (String) validatorUnit[2]);
+                            break;
+                        case Type.IfStrNe:
+                            ifResult = checkIfStrNe(ifParamValue, (String) validatorUnit[2]);
+                            break;
+                        case Type.IfStrGt:
+                            ifResult = checkIfStrGt(ifParamValue, (String) validatorUnit[2]);
+                            break;
+                        case Type.IfStrGe:
+                            ifResult = checkIfStrGe(ifParamValue, (String) validatorUnit[2]);
+                            break;
+                        case Type.IfStrLt:
+                            ifResult = checkIfStrLt(ifParamValue, (String) validatorUnit[2]);
+                            break;
+                        case Type.IfStrLe:
+                            ifResult = checkIfStrLe(ifParamValue, (String) validatorUnit[2]);
+                            break;
+                        case Type.IfStrIn:
+                            ifResult = checkIfStrIn(ifParamValue, (List<String>) validatorUnit[2]);
+                            break;
+                        case Type.IfStrNotIn:
+                            ifResult = checkIfStrNotIn(ifParamValue, (List<String>) validatorUnit[2]);
+                            break;
+                        default:
+                            throw new ValidationException("无法识别的条件验证器类型“" + ifValidatorType + "”"); // 不应该出现这种情况
+                    }
+
+                    if (!ifResult) // If条件不满足
+                        break; // 跳出
                 }
+
                 if (i < countOfIfs) // 有If条件不满足, 忽略本条验证规则
                     continue;
-
-                String aAlias = validator.alias;
-                if (aAlias == null)
-                    aAlias = alias;
 
                 if (value == null) { // 没有提供参数
                     if (!validator.required || ignoreRequired)
@@ -424,6 +581,9 @@ public class Validation {
                             break;
                         case Type.IntEq:
                             validateIntEq(value, (Integer) validatorUnit[1], validator.reason, aAlias);
+                            break;
+                        case Type.IntNe:
+                            validateIntNe(value, (Integer) validatorUnit[1], validator.reason, aAlias);
                             break;
                         case Type.IntGt:
                             validateIntGt(value, (Integer) validatorUnit[1], validator.reason, aAlias);
@@ -628,10 +788,7 @@ public class Validation {
         if (success > 0 || failed == 0)
             return value;
 
-        if (lastValidationException != null)
-            throw lastValidationException;
-
-        throw new ValidationException("“" + alias + "”验证失败"); // 这句应该不会执行
+        throw lastValidationException; // 此时 success == 0 && failed > 0
     }
 
     /**
@@ -672,14 +829,7 @@ public class Validation {
         if (validator == null)
             validator = new Validator();
 
-        if (strValidator.length() == 0) {
-            validator.countOfIfs = 0;
-            validator.required = false;
-            validator.reason = null;
-            validator.alias = null;
-            validator.units = null;
-            return validator;
-        }
+//        if (strValidator.length() == 0); // 外部函数已经检测过了, 不可能出现strValidator为空串
 
         int countOfIfs = 0;
         boolean required = false;
@@ -743,7 +893,7 @@ public class Validation {
                 if (pos == -1) { // 不带参数的验证器
                     if (segment.equals("Required")) {
                         if (units.size() > countOfIfs)
-                            throw new ValidationException("Required只能出现在验证器的开头（IfXxx后面）");
+                            throw new ValidationException("Required只能出现在验证规则的开头（IfXxx后面）");
                         required = true;
                     } else {
                         int validatorType = Type.fromNameOrThrow(segment);
@@ -751,7 +901,7 @@ public class Validation {
                     }
                 } else { // 有冒号:, 是带参数的验证器
                     if (pos == 0)
-                        throw new ValidationException("无法识别的验证器“" + segment + "”");
+                        throw new ValidationException("“" + segment + "”中的':'号前面没有验证器");
                     String validatorName = segment.substring(0, pos);
                     int validatorType = Type.fromNameOrThrow(validatorName);
                     String p;
@@ -762,6 +912,7 @@ public class Validation {
                     Object[] validatorUnit;
                     switch (validatorType) {
                         case Type.IntEq:
+                        case Type.IntNe:
                         case Type.IntGt:
                         case Type.IntGe:
                         case Type.IntLt:
@@ -1008,6 +1159,7 @@ public class Validation {
         // 整型（不提供length检测,因为负数的符号位会让人混乱, 可以用大于小于比较来做到这一点）
         put("Int", "“{{param}}”必须是整数");
         put("IntEq", "“{{param}}”必须等于 {{value}}");
+        put("IntNe", "“{{param}}”不能等于 {{value}}");
         put("IntGt", "“{{param}}”必须大于 {{min}}");
         put("IntGe", "“{{param}}”必须大于等于 {{min}}");
         put("IntLt", "“{{param}}”必须小于 {{max}}");
@@ -1328,11 +1480,11 @@ public class Validation {
         if (varName.length() == 0)
             return null;
 
-        Integer[] params = new Integer[strs.length - 1];
+        List<Integer> params = new ArrayList<>(strs.length - 1);
         for (int i = 1; i < strs.length; i++) {
             String str = strs[i];
             Integer value = validateInt(strs[i], "“" + validatorName + ":" + string + "”中“" + varName + "”后面必须全部是整数，实际上却包含了\"" + str + "\"", null);
-            params[i - 1] = value;
+            params.add(value);
         }
         return new Object[]{varName, params};
     }
@@ -1355,9 +1507,9 @@ public class Validation {
         if (varName.length() == 0)
             return null;
 
-        String[] params = new String[strs.length - 1];
+        List<String> params = new ArrayList<>(strs.length - 1);
         for (int i = 1; i < strs.length; i++) {
-            params[i - 1] = strs[i];
+            params.add(strs[i]);
         }
         return new Object[]{varName, params};
     }
@@ -1395,6 +1547,7 @@ public class Validation {
         // 整型（不提供length检测,因为负数的符号位会让人混乱, 可以用大于小于比较来做到这一点）
         put("Int", "Int");
         put("IntEq", "IntEq:100");
+        put("IntNe", "IntNe:100");
         put("IntGt", "IntGt:100");
         put("IntGe", "IntGe:100");
         put("IntLt", "IntLt:100");
@@ -1585,6 +1738,37 @@ public class Validation {
             throwWithErrorTemplate("Int", "{{param}}", alias);
         else
             throwWithErrorTemplate("IntEq", "{{param}}", alias, "{{value}}", equalVal.toString());
+        return null; // 永远不会执行这一句
+    }
+
+    public static Integer validateIntNe(Object value, Integer equalVal, String reason, String alias) throws ValidationException {
+        boolean isTypeError;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    int val = Integer.parseInt((String) value);
+                    if (val != equalVal)
+                        return val;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                isTypeError = true;
+        } else if (value instanceof Integer) {
+            if (equalVal.intValue() != (Integer) value)
+                return (Integer) value;
+            isTypeError = false;
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Int", "{{param}}", alias);
+        else
+            throwWithErrorTemplate("IntNe", "{{param}}", alias, "{{value}}", equalVal.toString());
         return null; // 永远不会执行这一句
     }
 
@@ -3184,6 +3368,258 @@ public class Validation {
 
     // endregion
 
+    // region If
+
+    protected static boolean checkIf(Object value) {
+        if (value instanceof String) {
+            String str = (String) value;
+            return str.equalsIgnoreCase("true") ||
+                str.equals("1") ||
+                str.equalsIgnoreCase("yes") ||
+                str.equalsIgnoreCase("y");
+        } else if (value instanceof Boolean) {
+            return (boolean) (Boolean) value;
+        } else if (value instanceof Integer) {
+            int v = (Integer) value;
+            return v == 1;
+        } else if (value instanceof Long) {
+            long v = (Long) value;
+            return v == 1;
+        }
+        return false;
+    }
+
+    protected static boolean checkIfNot(Object value) {
+        if (value instanceof String) {
+            String str = (String) value;
+            return str.equalsIgnoreCase("false") ||
+                str.equals("0") ||
+                str.equalsIgnoreCase("no") ||
+                str.equalsIgnoreCase("n");
+        } else if (value instanceof Boolean) {
+            boolean boolVal = (Boolean) value;
+            return !boolVal;
+        } else if (value instanceof Integer) {
+            int v = (Integer) value;
+            return v == 0;
+        } else if (value instanceof Long) {
+            long v = (Long) value;
+            return v == 0;
+        }
+        return false;
+    }
+
+    protected static boolean checkIfTrue(Object value) {
+        if (value instanceof String) {
+            String str = (String) value;
+            return str.equalsIgnoreCase("true");
+        } else if (value instanceof Boolean) {
+            return (boolean) (Boolean) value;
+        }
+        return false;
+    }
+
+    protected static boolean checkIfFalse(Object value) {
+        if (value instanceof String) {
+            String str = (String) value;
+            return str.equalsIgnoreCase("false");
+        } else if (value instanceof Boolean) {
+            boolean boolVal = (Boolean) value;
+            return !boolVal;
+        }
+        return false;
+    }
+
+    protected static boolean checkIfExist(Object value) {
+        return value != null;
+    }
+
+    protected static boolean checkIfNotExist(Object value) {
+        return value == null;
+    }
+
+    protected static boolean checkIfIntEq(Object value, Integer equalVal) {
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    int val = Integer.parseInt((String) value);
+                    return val == equalVal;
+                } catch (Exception e) {
+                    // 实际上是数值溢出, 暂时算作类型错误
+                }
+            }
+        } else if (value instanceof Integer) {
+            return equalVal.intValue() == (Integer) value;
+        }
+
+        return false;
+    }
+
+    protected static boolean checkIfIntNe(Object value, Integer equalVal) {
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    int val = Integer.parseInt((String) value);
+                    return val != equalVal;
+                } catch (Exception e) {
+                    // 实际上是数值溢出, 暂时算作类型错误
+                }
+            }
+        } else if (value instanceof Integer) {
+            return equalVal.intValue() != (Integer) value;
+        }
+
+        return true;
+    }
+
+    protected static boolean checkIfIntGt(Object value, Integer min) {
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    int val = Integer.parseInt((String) value);
+                    return val > min;
+                } catch (Exception e) {
+                    // 实际上是数值溢出, 暂时算作类型错误
+                }
+            }
+        } else if (value instanceof Integer) {
+            return (Integer) value > min;
+        }
+
+        return false;
+    }
+
+    protected static boolean checkIfIntGe(Object value, Integer min) {
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    int val = Integer.parseInt((String) value);
+                    return val >= min;
+                } catch (Exception e) {
+                    // 实际上是数值溢出, 暂时算作类型错误
+                }
+            }
+        } else if (value instanceof Integer) {
+            return (Integer) value >= min;
+        }
+
+        return false;
+    }
+
+    protected static boolean checkIfIntLt(Object value, Integer max) {
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    int val = Integer.parseInt((String) value);
+                    return val < max;
+                } catch (Exception e) {
+                    // 实际上是数值溢出, 暂时算作类型错误
+                }
+            }
+        } else if (value instanceof Integer) {
+            return (Integer) value < max;
+        }
+
+        return false;
+    }
+
+    protected static boolean checkIfIntLe(Object value, Integer max) {
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    int val = Integer.parseInt((String) value);
+                    return val <= max;
+                } catch (Exception e) {
+                    // 实际上是数值溢出, 暂时算作类型错误
+                }
+            }
+        } else if (value instanceof Integer) {
+            return (Integer) value <= max;
+        }
+
+        return false;
+    }
+
+    protected static boolean checkIfIntIn(Object value, List<Integer> values) {
+        Integer v;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    v = Integer.parseInt((String) value);
+                } catch (Exception e) {
+                    return false; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                return false;
+        } else if (value instanceof Integer) {
+            v = (Integer) value;
+        } else
+            return false;
+
+        return values.indexOf(v) >= 0;
+    }
+
+    protected static boolean checkIfIntNotIn(Object value, List<Integer> values) {
+        Integer v;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    v = Integer.parseInt((String) value);
+                } catch (Exception e) {
+                    return true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                return true;
+        } else if (value instanceof Integer) {
+            v = (Integer) value;
+        } else
+            return true;
+
+        return values.indexOf(v) == -1;
+    }
+
+    protected static boolean checkIfStrEq(Object value, String string) {
+        return string.equals(value);
+    }
+
+    protected static boolean checkIfStrNe(Object value, String string) {
+        return !string.equals(value);
+    }
+
+    protected static boolean checkIfStrGt(Object value, String string) {
+        if (value instanceof String)
+            return ((String) value).compareTo(string) > 0;
+        return false;
+    }
+
+    protected static boolean checkIfStrGe(Object value, String string) {
+        if (value instanceof String)
+            return ((String) value).compareTo(string) >= 0;
+        return false;
+    }
+
+    protected static boolean checkIfStrLt(Object value, String string) {
+        if (value instanceof String)
+            return ((String) value).compareTo(string) < 0;
+        return false;
+    }
+
+    protected static boolean checkIfStrLe(Object value, String string) {
+        if (value instanceof String)
+            return ((String) value).compareTo(string) <= 0;
+        return false;
+    }
+
+    protected static boolean checkIfStrIn(Object value, List<String> strings) {
+        return strings.indexOf(value) >= 0;
+    }
+
+    protected static boolean checkIfStrNotIn(Object value, List<String> strings) {
+        return strings.indexOf(value) == -1;
+    }
+
+    // endregion
+
     static private class Validator {
         public int countOfIfs;
         public boolean required;
@@ -3206,16 +3642,17 @@ public class Validation {
         // 32位整型
         static final int Int = 100;
         static final int IntEq = 101;
-        static final int IntGt = 102;
-        static final int IntGe = 103;
-        static final int IntLt = 104;
-        static final int IntLe = 105;
-        static final int IntGtLt = 106;
-        static final int IntGeLe = 107;
-        static final int IntGtLe = 108;
-        static final int IntGeLt = 109;
-        static final int IntIn = 110;
-        static final int IntNotIn = 111;
+        static final int IntNe = 102;
+        static final int IntGt = 103;
+        static final int IntGe = 104;
+        static final int IntLt = 105;
+        static final int IntLe = 106;
+        static final int IntGtLt = 107;
+        static final int IntGeLe = 108;
+        static final int IntGtLe = 109;
+        static final int IntGeLt = 110;
+        static final int IntIn = 111;
+        static final int IntNotIn = 112;
 
         // Float
         static final int Float = 200;
@@ -3346,6 +3783,7 @@ public class Validation {
             // 32位整型
             put("Int", Int);
             put("IntEq", IntEq);
+            put("IntNe", IntNe);
             put("IntGt", IntGt);
             put("IntGe", IntGe);
             put("IntLt", IntLt);

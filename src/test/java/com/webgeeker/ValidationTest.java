@@ -4,26 +4,22 @@ import com.webgeeker.validation.Validation;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * Unit test for simple App.
  */
 public class ValidationTest
-    extends TestCase
-{
+    extends TestCase {
     /**
      * Create the test case
      *
      * @param testName name of the test case
      */
-    public ValidationTest(String testName )
-    {
-        super( testName );
+    public ValidationTest(String testName) {
+        super(testName);
 
         // 预热
         try {
@@ -48,9 +44,8 @@ public class ValidationTest
     /**
      * @return the suite of tests being tested
      */
-    public static Test suite()
-    {
-        return new TestSuite( ValidationTest.class );
+    public static Test suite() {
+        return new TestSuite(ValidationTest.class);
     }
 
     // 因为 Runnable 的 run() 方法不能抛出异常, 所以自定义一个MyRunnable
@@ -92,6 +87,9 @@ public class ValidationTest
         Validation.validate(params, new String[]{"name", "Required|StrLenGeLe:1,20", null});
         Validation.validate(params, new String[]{"name", "Required|StrLenGeLe:1,20|Alias:姓名", null});
         Validation.validate(params, new String[]{"name", "Required|StrLenGeLe:1,20|>>>:必须提供姓名", null});
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, new String[]{"name", "Str|Required", null});
+        }, "Required只能出现在验证规则的开头（IfXxx后面）");
 
         _assertThrowExpectionContainErrorString(() -> {
             Validation.validate(params, new String[]{"phone", "Required", null});
@@ -182,6 +180,30 @@ public class ValidationTest
             params.put("varInt", 0);
             Validation.validate(params, new String[]{"varInt", "IntEq:-1", null});
         }, "必须等于 -1");
+
+        // IntNe
+        params.put("varInt", "1");
+        Validation.validate(params, new String[]{"varInt", "IntNe:-1", null});
+        params.put("varInt", 1);
+        Validation.validate(params, new String[]{"varInt", "IntNe:-1", null});
+        _assertThrowExpectionContainErrorString(() -> {
+            // 类型错误1
+            params.put("varInt", "abc");
+            Validation.validate(params, new String[]{"varInt", "IntNe:-1", null});
+        }, "必须是整数");
+        _assertThrowExpectionContainErrorString(() -> {
+            // 类型错误2
+            params.put("varInt", true);
+            Validation.validate(params, new String[]{"varInt", "IntNe:-1", null});
+        }, "必须是整数");
+        _assertThrowExpectionContainErrorString(() -> {
+            params.put("varInt", "-1");
+            Validation.validate(params, new String[]{"varInt", "IntNe:-1", null});
+        }, "不能等于 -1");
+        _assertThrowExpectionContainErrorString(() -> {
+            params.put("varInt", -1);
+            Validation.validate(params, new String[]{"varInt", "IntNe:-1", null});
+        }, "不能等于 -1");
 
         // IntGt
         params.put("varInt", "1");
@@ -1226,6 +1248,12 @@ public class ValidationTest
             }, "必须是字符串");
         }
 
+        // 为了提高测试覆盖率: compileValidator() 方法中的行: else if (pos == len - 2)
+        params.put("param", "abc/");
+        Validation.validate(params, new String[]{"param", "Regexp:/^(abc\\/|def)$/", null});
+        params.put("param", "def");
+        Validation.validate(params, new String[]{"param", "Regexp:/^(abc\\/|def)$/", null});
+
     }
 
     public void testValidateBool() throws Exception {
@@ -1702,6 +1730,42 @@ public class ValidationTest
             }, "必须是数组或List");
         }
 
+        // 多维数组
+        Validation.validate(new HashMap<String, Object>(){{
+            put("matrix", new Object[]{
+                new Object[]{1, 2, 345},
+                new Object[]{6, 7, 8},
+            });
+        }}, new String[]{
+            "matrix[*][*]", "Int", null,
+            "matrix[0][1]", "IntEq:2", null,
+            "matrix[0][100]", "IntEq:2", null,
+        });
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(){{
+                put("matrix", new Object[]{
+                    new Object[]{1, 2, "abc"},
+                    new Object[]{6, 7, 8},
+                });
+            }}, new String[]{"matrix[*][*]", "Int", null});
+        }, "“matrix[0][2]”必须是整数");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(){{
+                put("matrix", new Object[]{
+                    new Object[]{1, 2, 345},
+                    new Object[]{6, "ddd", 8},
+                });
+            }}, new String[]{"matrix[*][*]", "Int", null});
+        }, "“matrix[1][1]”必须是整数");
+
+        params.clear();
+        params.put("comments", new String[0]);
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, new String[]{"comments[*]", "Required", null});
+        }, "必须提供“comments[*]”");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, new String[]{"comments", "ArrLenGe:1", null});
+        }, "“comments”长度必须大于等于 1");
     }
 
     public void testValidateArr() throws Exception {
@@ -1941,7 +2005,1343 @@ public class ValidationTest
     }
 
     public void testValidateCompile() throws Exception {
-        // >>> 自定义验证失败的提示
         Validation.validateValue("1||2/3/", new String[]{"Regexp:/^1\\|\\|2\\/3\\//"});
     }
+
+    public void testValidateIfXxx() throws Exception {
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("condition", 1);
+        params.put("param", 1);
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, new String[]{"param", "IfIntEq:condition,abc|IntEq:1", null}); //条件成立+验证不通过
+        }, "“IfIntEq:condition,abc”中“condition”后面必须是整数");
+    }
+
+    public void testValidateIfBool() throws Exception {
+        HashMap<String, Object> params = new HashMap<>();
+        Object[] trues;
+        Object[] falses;
+
+        // If
+        trues = new Object[]{1, "1", true, "true", "yes", "y"};
+        falses = new Object[]{0, "0", false, "false", "no", "n", "hello", 2.5}; //'hello'和2.5即不是true, 也不是false
+        for (Object trueVal : trues) {
+            for (Object falseVal : falses) {
+                params.clear();
+                params.put("type", falseVal);
+                params.put("state", 0);
+                Validation.validate(params, new String[]{"state", "If:type|IntEq:0", null}); //条件不成立+验证通过（忽略这条）
+                Validation.validate(params, new String[]{"state", "If:type|IntEq:1", null}); //条件不成立+验证不通过（忽略这条）
+                params.put("type", trueVal);
+                Validation.validate(params, new String[]{"state", "If:type|IntEq:0", null}); //条件成立+验证通过
+                _assertThrowExpectionContainErrorString(() -> {
+                    Validation.validate(params, new String[]{"state", "If:type|IntEq:1", null}); //条件成立+验证不通过
+                }, "必须等于 1");
+            }
+        }
+
+        // IfNot
+        trues = new Object[]{1, "1", true, "true", "yes", "y", "hello", 2.5}; //'hello'和2.5即不是true, 也不是false
+        falses = new Object[]{0, "0", false, "false", "no", "n"};
+        for (Object trueVal : trues) {
+            for (Object falseVal : falses) {
+                params.clear();
+                params.put("type", trueVal);
+                params.put("state", 0);
+                Validation.validate(params, new String[]{"state", "IfNot:type|IntEq:0", null}); //条件不成立+验证通过（忽略这条）
+                Validation.validate(params, new String[]{"state", "IfNot:type|IntEq:1", null}); //条件不成立+验证不通过（忽略这条）
+                params.put("type", falseVal);
+                Validation.validate(params, new String[]{"state", "IfNot:type|IntEq:0", null}); //条件成立+验证通过
+                _assertThrowExpectionContainErrorString(() -> {
+                    Validation.validate(params, new String[]{"state", "IfNot:type|IntEq:1", null}); //条件成立+验证不通过
+                }, "必须等于 1");
+            }
+        }
+
+        // IfTrue
+        trues = new Object[]{true, "true"};
+        falses = new Object[]{false, "false", 0, "0", 1, "1", "yes", "y", "no", "n", "hello", 2.5};
+        for (Object trueVal : trues) {
+            for (Object falseVal : falses) {
+                params.clear();
+                params.put("type", falseVal);
+                params.put("state", 0);
+                Validation.validate(params, new String[]{"state", "IfTrue:type|IntEq:0", null}); //条件不成立+验证通过（忽略这条）
+                Validation.validate(params, new String[]{"state", "IfTrue:type|IntEq:1", null}); //条件不成立+验证不通过（忽略这条）
+                params.put("type", trueVal);
+                Validation.validate(params, new String[]{"state", "IfTrue:type|IntEq:0", null}); //条件成立+验证通过
+                _assertThrowExpectionContainErrorString(() -> {
+                    Validation.validate(params, new String[]{"state", "IfTrue:type|IntEq:11", null}); //条件成立+验证不通过
+                }, "必须等于 1");
+            }
+        }
+
+        // IfFalse
+        trues = new Object[]{true, "true", 0, "0", 1, "1", "yes", "y", "no", "n", "hello", 2.5};
+        falses = new Object[]{false, "false"};
+        for (Object trueVal : trues) {
+            for (Object falseVal : falses) {
+                params.clear();
+                params.put("type", trueVal);
+                params.put("state", 0);
+                Validation.validate(params, new String[]{"state", "IfFalse:type|IntEq:0", null}); //条件不成立+验证通过（忽略这条）
+                Validation.validate(params, new String[]{"state", "IfFalse:type|IntEq:1", null}); //条件不成立+验证不通过（忽略这条）
+                params.put("type", falseVal);
+                Validation.validate(params, new String[]{"state", "IfFalse:type|IntEq:0", null}); //条件成立+验证通过
+                _assertThrowExpectionContainErrorString(() -> {
+                    Validation.validate(params, new String[]{"state", "IfFalse:type|IntEq:11", null}); //条件成立+验证不通过
+                }, "必须等于 1");
+            }
+        }
+
+    }
+
+    public void testValidateIfExist() throws Exception {
+        HashMap<String, Object> params = new HashMap<>();
+        Object[] existVals;
+        Object[] notExistVals;
+
+        // IfExist
+        existVals = new Object[]{0, 123, "", "123", true, false, 0.0, 1.0, new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()};
+        notExistVals = new Object[]{null, "undefined"}; // 后面对 "undefined" 会作特殊处理(表示条件参数不存在的情况)
+        for (Object existVal : existVals) {
+            for (Object notExistVal : notExistVals) {
+                params.clear();
+                if (notExistVal == null)
+                    params.put("param1", null);
+                params.put("param2", 0);
+                Validation.validate(params, new String[]{"param2", "IfExist:param1|IntEq:0", null}); //条件不成立+验证通过（忽略这条）
+                Validation.validate(params, new String[]{"param2", "IfExist:param1|IntEq:1", null}); //条件不成立+验证不通过（忽略这条）
+                params.put("param1", existVal);
+                Validation.validate(params, new String[]{"param2", "IfExist:param1|IntEq:0", null}); //条件成立+验证通过
+                _assertThrowExpectionContainErrorString(() -> {
+                    Validation.validate(params, new String[]{"param2", "IfExist:param1|IntEq:1", null}); //条件成立+验证不通过
+                }, "必须等于 1");
+            }
+        }
+
+        // IfNotExist
+        existVals = new Object[]{0, 123, "", "123", true, false, 0.0, 1.0, new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()};
+        notExistVals = new Object[]{null, "undefined"}; // 后面对 "undefined" 会作特殊处理(表示条件参数不存在的情况)
+        for (Object existVal : existVals) {
+            for (Object notExistVal : notExistVals) {
+                params.clear();
+                params.put("param1", existVal);
+                params.put("param2", 0);
+                Validation.validate(params, new String[]{"param2", "IfNotExist:param1|IntEq:0", null}); //条件不成立+验证通过（忽略这条）
+                Validation.validate(params, new String[]{"param2", "IfNotExist:param1|IntEq:1", null}); //条件不成立+验证不通过（忽略这条）
+                if (notExistVal == null)
+                    params.put("param1", null);
+                else
+                    params.remove("param1");
+                Validation.validate(params, new String[]{"param2", "IfNotExist:param1|IntEq:0", null}); //条件成立+验证通过
+                _assertThrowExpectionContainErrorString(() -> {
+                    Validation.validate(params, new String[]{"param2", "IfNotExist:param1|IntEq:1", null}); //条件成立+验证不通过
+                }, "必须等于 1");
+            }
+        }
+    }
+
+    public void testValidateIfInt() throws Exception {
+        HashMap<String, Object> params = new HashMap<>();
+        Object[] intVals;
+        Object[] notIntVals;
+
+        // IfIntEq
+        intVals = new Object[]{0, -1, 1, 100, -100, "0", "-1", "1", "100", "-100",};
+        for (Object intVal : intVals) {
+            int intVal2;
+            if (intVal instanceof String)
+                intVal2 = Integer.parseInt((String) intVal) + 1;
+            else
+                intVal2 = ((Integer) intVal) + 1;
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntEq:condition," + intVal2 + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntEq:condition," + intVal2 + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntEq:condition," + intVal + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfIntEq:condition," + intVal + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfIntEq 条件参数类型错误导致的条件不成立的情况
+        notIntVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是整型也不是整型字符串
+        for (Object notIntVal : notIntVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntEq:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntEq:condition,1|IntEq:1", null});
+
+        }
+
+        // IfIntNe
+        intVals = new Object[]{0, -1, 1, 100, -100, "0", "-1", "1", "100", "-100",};
+        for (Object intVal : intVals) {
+            int intVal2;
+            if (intVal instanceof String)
+                intVal2 = Integer.parseInt((String) intVal) + 1;
+            else
+                intVal2 = ((Integer) intVal) + 1;
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntNe:condition," + intVal + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntNe:condition," + intVal + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntNe:condition," + intVal2 + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfIntNe:condition," + intVal2 + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfIntNe 条件参数类型错误导致的条件成立的情况
+        notIntVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是整型也不是整型字符串
+        for (Object notIntVal : notIntVals) {
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntNe:condition,0|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfIntNe:condition,1|IntEq:1", null});
+            }, "必须等于 1");
+        }
+
+        // IfIntGt
+        intVals = new Object[]{0, -1, 1, 100, -100, "0", "-1", "1", "100", "-100",};
+        for (Object intVal : intVals) {
+            int intVal2;
+            if (intVal instanceof String)
+                intVal2 = Integer.parseInt((String) intVal);
+            else
+                intVal2 = ((Integer) intVal);
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntGt:condition," + (intVal2 + 1) + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntGt:condition," + (intVal2 + 1) + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntGt:condition," + (intVal2 - 1) + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfIntGt:condition," + (intVal2 - 10) + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfIntGt 条件参数类型错误导致的条件不成立的情况
+        notIntVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是整型也不是整型字符串
+        for (Object notIntVal : notIntVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntGt:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntGt:condition,1|IntEq:1", null});
+
+        }
+
+        // IfIntGe
+        intVals = new Object[]{0, -1, 1, 100, -100, "0", "-1", "1", "100", "-100",};
+        for (Object intVal : intVals) {
+            int intVal2;
+            if (intVal instanceof String)
+                intVal2 = Integer.parseInt((String) intVal);
+            else
+                intVal2 = ((Integer) intVal);
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntGe:condition," + (intVal2 + 1) + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntGe:condition," + (intVal2 + 2) + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntGe:condition," + intVal + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfIntGe:condition," + (intVal2 - 1) + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfIntGe 条件参数类型错误导致的条件不成立的情况
+        notIntVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是整型也不是整型字符串
+        for (Object notIntVal : notIntVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntGe:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntGe:condition,1|IntEq:1", null});
+
+        }
+
+        // IfIntLt
+        intVals = new Object[]{0, -1, 1, 100, -100, "0", "-1", "1", "100", "-100",};
+        for (Object intVal : intVals) {
+            int intVal2;
+            if (intVal instanceof String)
+                intVal2 = Integer.parseInt((String) intVal);
+            else
+                intVal2 = ((Integer) intVal);
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntLt:condition," + intVal + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntLt:condition," + (intVal2 - 1) + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntLt:condition," + (intVal2 + 1) + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfIntLt:condition," + (intVal2 + 10) + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfIntLt 条件参数类型错误导致的条件不成立的情况
+        notIntVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是整型也不是整型字符串
+        for (Object notIntVal : notIntVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntLt:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntLt:condition,1|IntEq:1", null});
+
+        }
+
+        // IfIntLe
+        intVals = new Object[]{0, -1, 1, 100, -100, "0", "-1", "1", "100", "-100",};
+        for (Object intVal : intVals) {
+            int intVal2;
+            if (intVal instanceof String)
+                intVal2 = Integer.parseInt((String) intVal);
+            else
+                intVal2 = ((Integer) intVal);
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntLe:condition," + (intVal2 - 1) + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntLe:condition," + (intVal2 - 2) + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntLe:condition," + intVal + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfIntLe:condition," + (intVal2 + 1) + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfIntLe 条件参数类型错误导致的条件不成立的情况
+        notIntVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是整型也不是整型字符串
+        for (Object notIntVal : notIntVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntLe:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntLe:condition,1|IntEq:1", null});
+
+        }
+
+        // IfIntIn 条件不成立
+        Object[] intNotInVals = new Object[]{-13, 13, 123, -123, "-13", "13", "123", "-123",};
+        for (Object intNotInVal : intNotInVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intNotInVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntIn:condition,-100,-1,0,1,100|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intNotInVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntIn:condition,-100,-1,0,1,100|IntEq:1", null});
+        }
+        // IfIntIn 条件成立
+        intVals = new Object[]{0, -1, 1, 100, -100, "0", "-1", "1", "100", "-100",};
+        for (Object intVal : intVals) {
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntIn:condition,-100,-1,0,1,100|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", intVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfIntIn:condition,-100,-1,0,1,100|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfIntIn 条件参数类型错误导致的条件不成立的情况
+        notIntVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是整型也不是整型字符串
+        for (Object notIntVal : notIntVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntIn:condition,-100,-1,0,1,100|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntIn:condition,-100,-1,0,1,100|IntEq:1", null});
+
+        }
+
+        // IfIntNotIn 条件不成立
+        Object[] intInVals = new Object[]{0, -1, 1, 100, -100, "0", "-1", "1", "100", "-100",};
+        for (Object intInVal : intInVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intInVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntNotIn:condition,-100,-1,0,1,100|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intInVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfIntNotIn:condition,-100,-1,0,1,100|IntEq:1", null});
+        }
+        // IfIntNotIn 条件成立
+        intNotInVals = new Object[]{-13, 13, 123, -123, "-13", "13", "123", "-123",};
+        for (Object intNotInVal : intNotInVals) {
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", intNotInVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntNotIn:condition,-100,-1,0,1,100|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", intNotInVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfIntNotIn:condition,-100,-1,0,1,100|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfIntNotIn 条件参数类型错误导致的条件不成立的情况
+        notIntVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是整型也不是整型字符串
+        for (Object notIntVal : notIntVals) {
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfIntNotIn:condition,-100,-1,0,1,100|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", notIntVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfIntNotIn:condition,-100,-1,0,1,100|IntEq:1", null});
+            }, "必须等于 1");
+
+        }
+
+    }
+
+    public void testValidateIfStr() throws Exception {
+        HashMap<String, Object> params = new HashMap<>();
+        Object[] strVals;
+        Object[] notStrVals;
+
+        // IfStrEq
+        strVals = new Object[]{"", "a", "0", "-1", "1", "100", "-100", "abc", "1.0"};
+        for (Object strVal : strVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrEq:condition," + strVal + 'p' + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrEq:condition," + strVal + '0' + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrEq:condition," + strVal + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfStrEq:condition," + strVal + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfStrEq 条件参数类型错误导致的条件不成立的情况
+        notStrVals = new Object[]{true, false, 1, 0, 1.0, 0.0, new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是字符串型
+        for (Object notStrVal : notStrVals) {
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrEq:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrEq:condition,1|IntEq:1", null});
+        }
+
+        // IfStrNe
+        strVals = new Object[]{"", "a", "0", "-1", "1", "100", "-100", "abc", "1.0"};
+        for (Object strVal : strVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrNe:condition," + strVal + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrNe:condition," + strVal + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrNe:condition," + strVal + 'p' + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfStrNe:condition," + strVal + '0' + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfStrNe 条件参数类型错误导致的条件不成立的情况
+        notStrVals = new Object[]{true, false, 1, 0, 1.0, 0.0, new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是字符串型
+        for (Object notStrVal : notStrVals) {
+            //条件成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrNe:condition,0|IntEq:1", null});
+
+            //条件成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfStrNe:condition,1|IntEq:1", null});
+            }, "必须等于 1");
+        }
+
+        // IfStrGt
+        strVals = new Object[]{"", "a", "0", "-1", "1", "100", "-100", "abc", "1.0"};
+        for (Object strVal : strVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrGt:condition," + strVal + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrGt:condition," + strVal + '0' + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", "" + strVal + 'p');
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrGt:condition," + strVal + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", "" + strVal + 'a');
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfStrGt:condition," + strVal + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfStrGt 条件参数类型错误导致的条件不成立的情况
+        notStrVals = new Object[]{true, false, 1, 0, 1.0, 0.0, new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是字符串型
+        for (Object notStrVal : notStrVals) {
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrGt:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrGt:condition,1|IntEq:1", null});
+        }
+
+        // IfStrGe
+        strVals = new Object[]{"", "a", "0", "-1", "1", "100", "-100", "abc", "1.0"};
+        for (Object strVal : strVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrGe:condition," + strVal + 'a' + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrGe:condition," + strVal + '0' + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrGe:condition," + strVal + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", "" + strVal + 'a');
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfStrGe:condition," + strVal + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfStrGe 条件参数类型错误导致的条件不成立的情况
+        notStrVals = new Object[]{true, false, 1, 0, 1.0, 0.0, new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是字符串型
+        for (Object notStrVal : notStrVals) {
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrGe:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrGe:condition,1|IntEq:1", null});
+        }
+
+        // IfStrLt
+        strVals = new Object[]{"", "a", "0", "-1", "1", "100", "-100", "abc", "1.0"};
+        for (Object strVal : strVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrLt:condition," + strVal + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", "" + strVal + '0');
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrLt:condition," + strVal + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrLt:condition," + strVal + 'p' + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfStrLt:condition," + strVal + 'a' + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfStrLt 条件参数类型错误导致的条件不成立的情况
+        notStrVals = new Object[]{true, false, 1, 0, 1.0, 0.0, new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是字符串型
+        for (Object notStrVal : notStrVals) {
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrLt:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrLt:condition,1|IntEq:1", null});
+        }
+
+        // IfStrLe
+        strVals = new Object[]{"", "a", "0", "-1", "1", "100", "-100", "abc", "1.0"};
+        for (Object strVal : strVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", "" + strVal + 'a');
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrLe:condition," + strVal + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", "" + strVal + '0');
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrLe:condition," + strVal + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrLe:condition," + strVal + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfStrLe:condition," + strVal + 'a' + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfStrLe 条件参数类型错误导致的条件不成立的情况
+        notStrVals = new Object[]{true, false, 1, 0, 1.0, 0.0, new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是字符串型
+        for (Object notStrVal : notStrVals) {
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrLe:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrLe:condition,1|IntEq:1", null});
+        }
+
+        // IfStrIn 条件不成立
+        strVals = new Object[]{"hello", "world", "-13", "13", "-123", "123"};
+        for (Object strVal : strVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrIn:condition,,abc,-100,-1,0,1,100|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrIn:condition,abc,-100,-1,0,1,100,|IntEq:1", null});
+        }
+        //条件不成立+验证通过（此条检测会被忽略）
+        params.clear();
+        params.put("condition", "");
+        params.put("param", 1);
+        Validation.validate(params, new String[]{"param", "IfStrIn:condition,abc,-100,-1,0,1,100|IntEq:1", null});
+        //条件不成立+验证不通过（此条检测会被忽略）
+        params.clear();
+        params.put("condition", "");
+        params.put("param", 0);
+        Validation.validate(params, new String[]{"param", "IfStrIn:condition,abc,-100,-1,0,1,100|IntEq:1", null});
+        // IfStrIn 条件成立
+        strVals = new Object[]{"", "abc", "0", "-1", "1", "100", "-100"};
+        for (Object strVal : strVals) {
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrIn:condition,,abc,-100,-1,0,1,100|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfStrIn:condition,abc,-100,-1,0,1,100,|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        //条件成立+验证通过
+        params.clear();
+        params.put("condition", "");
+        params.put("param", 1);
+        Validation.validate(params, new String[]{"param", "IfStrIn:condition,|IntEq:1", null});
+        //条件成立+验证不通过
+        params.clear();
+        params.put("condition", "");
+        params.put("param", 0);
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, new String[]{"param", "IfStrIn:condition,,|IntEq:1", null});
+        }, "必须等于 1");
+        // IfStrIn 条件参数类型错误导致的条件不成立的情况
+        notStrVals = new Object[]{true, false, 1, 0, 1.0, 0.0, new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是字符串型
+        for (Object notStrVal : notStrVals) {
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrIn:condition,,abc,-100,-1,0,1,100|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrIn:condition,abc,-100,-1,0,1,100,1|IntEq:1", null});
+        }
+
+        // IfStrNotIn 条件不成立
+        strVals = new Object[]{"", "abc", "0", "-1", "1", "100", "-100"};
+        for (Object strVal : strVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrNotIn:condition,,abc,-100,-1,0,1,100|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfStrNotIn:condition,abc,-100,-1,0,1,100,|IntEq:1", null});
+        }
+        //条件不成立+验证通过（此条检测会被忽略）
+        params.clear();
+        params.put("condition", "");
+        params.put("param", 1);
+        Validation.validate(params, new String[]{"param", "IfStrNotIn:condition,|IntEq:1", null});
+        //条件不成立+验证不通过（此条检测会被忽略）
+        params.clear();
+        params.put("condition", "");
+        params.put("param", 0);
+        Validation.validate(params, new String[]{"param", "IfStrNotIn:condition,,|IntEq:1", null});
+        // IfStrNotIn 条件成立
+        strVals = new Object[]{"hello", "world", "-13", "13", "-123", "123"};
+        for (Object strVal : strVals) {
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrNotIn:condition,,abc,-100,-1,0,1,100|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", strVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfStrNotIn:condition,abc,-100,-1,0,1,100,|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        //条件成立+验证通过
+        params.clear();
+        params.put("condition", "");
+        params.put("param", 1);
+        Validation.validate(params, new String[]{"param", "IfStrNotIn:condition,abc,-100,-1,0,1,100|IntEq:1", null});
+        //条件成立+验证不通过
+        params.clear();
+        params.put("condition", "");
+        params.put("param", 0);
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, new String[]{"param", "IfStrNotIn:condition,abc,-100,-1,0,1,100|IntEq:1", null});
+        }, "必须等于 1");
+        // IfStrNotIn 条件参数类型错误导致的条件不成立的情况
+        notStrVals = new Object[]{true, false, 1, 0, 1.0, 0.0, new Object[0], new int[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是字符串型
+        for (Object notStrVal : notStrVals) {
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfStrNotIn:condition,,abc,-100,-1,0,1,100|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", notStrVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfStrNotIn:condition,abc,-100,-1,0,1,100,1|IntEq:1", null});
+            }, "必须等于 1");
+        }
+
+    }
+
+    public void testValidateIfParamExistence() throws Exception {
+        HashMap<String, Object> params = new HashMap<>();
+
+        // ignoreRequired=false + 条件参数不存在 + 参数存在 -> 应该抛出异常
+        params.clear();
+        params.put("param", 1);
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, new String[]{"param", "IfStrEq:condition,1|IntEq:1", null}, false);
+        }, "必须提供条件参数“condition”，因为“param”的验证依赖它");
+
+        // ignoreRequired=false + 条件参数不存在 + 参数不存在 -> 应该抛出异常
+        params.clear();
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, new String[]{"param", "IfStrEq:condition,1|IntEq:1", null}, false);
+        }, "必须提供条件参数“condition”，因为“param”的验证依赖它");
+
+        // ignoreRequired=true + 条件参数不存在 + 参数存在 -> 应该抛出异常
+        params.clear();
+        params.put("param", 1);
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, new String[]{"param", "IfStrEq:condition,1|IntEq:1", null}, true);
+        }, "必须提供条件参数“condition”，因为“param”的验证依赖它");
+
+        // ignoreRequired=true + 条件参数不存在 + 参数不存在 -> 无需检测该参数
+        params.clear();
+        Validation.validate(params, new String[]{"param", "IfStrEq:condition,1|IntEq:1", null}, true);
+
+    }
+
+    public void testValidateIf() throws Exception {
+        HashMap<String, Object> articleInfo = new HashMap<>();
+        articleInfo.put("type", 1); // 1-普通文章, 2-用户投诉
+        articleInfo.put("title", "WebGeeker Validation");
+        articleInfo.put("content", "WebGeeker Validation 是一个非常强大的参数验证工具, 能够验证无限嵌套的数据结构");
+        articleInfo.put("state", 0);
+
+        HashMap<String, Object> complaintInfo = new HashMap<>();
+        complaintInfo.put("type", 2); // 1-普通文章, 2-用户投诉
+        complaintInfo.put("title", "客服（10000）的服务太差了");
+        complaintInfo.put("content", "客服（10000）的服务太差了, 我要投诉他, 砸他饭碗");
+        complaintInfo.put("state", 1); // 0-待处理, 1-处理中, 2-已处理
+
+        String[] validations = new String[]{
+            "type", "Required|IntIn:1,2", null,
+            "title", "Required|StrLenGeLe:2,100", null,
+            "content", "Required|StrLenGe:1|StrLenLe:10000000", null,
+            "state", "IfIntEq:type,1|IntEq:0"/*检测 type==1 普通文章*/, "IfIntEq:type,2|Required|IntIn:0,1,2"/*检测 type==2 用户投诉*/, null,
+        };
+
+        Validation.validate(articleInfo, validations);
+        Validation.validate(complaintInfo, validations);
+
+        String[] validations2 = new String[]{
+            "article.type", "Required|IntIn:1,2", null,
+            "article.title", "Required|StrLenGeLe:2,100", null,
+            "article.content", "Required|StrLenGe:1|StrLenLe:10000000", null,
+            "article.state",
+                "IfIntEq:.type,1|IntEq:0"/*检测 type==1 普通文章*/,
+                "IfIntEq:article.type,2|Required|IntIn:0,1,2"/*检测 type==2 用户投诉*/,
+            null,
+        };
+        Validation.validate(new HashMap<String, Object>(){{put("article", articleInfo);}}, validations2);
+        Validation.validate(new HashMap<String, Object>(){{put("article", complaintInfo);}}, validations2);
+
+        // If验证器的参数为嵌套的参数
+        HashMap<String, Object> setting = new HashMap<String, Object>(){{
+            put("flags", new Integer[]{
+                1,  // 是否绑定了手机
+                1,  // 是否绑定了邮箱
+                1,  // 是否绑定了支付宝
+            });
+        }};
+        HashMap<String, Object> user = new HashMap<String, Object>(){{
+            put("name", "hello");
+            put("setting", setting);
+            put("phone", "18812340001");
+            put("email", "18812340001@163.com");
+            put("alipay", "18812340001@alipay.com");
+        }};
+        HashMap<String, Object> params = new HashMap<String, Object>(){{
+            put("user", user);
+        }};
+        String[] validations3 = new String[]{
+            "user.phone", "If:user.setting.flags[0]|Required|StrLen:11", null,
+            "user.email", "If:user.setting.flags[1]|Required|StrLenGeLe:1,100", null,
+            "user.alipay", "If:user.setting.flags[2]|Required|StrLenGeLe:1,100", null,
+        };
+        Validation.validate(params, validations3);
+        setting.put("flags", new Integer[]{1,1}); // If 条件参数的不存在
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, validations3);
+        }, "必须提供条件参数“user.setting.flags[2]”，因为“user.alipay”的验证依赖它");
+        user.remove("email"); // 参数的不存在
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, validations3);
+        }, "必须提供“user.email”");
+        setting.remove("flags"); // If 条件参数的上一级不存在
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, validations3);
+        }, "必须提供条件参数“user.setting.flags[0]”，因为“user.phone”的验证依赖它");
+        user.remove("setting"); // If 条件参数的上上级不存在
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, validations3);
+        }, "必须提供条件参数“user.setting.flags[0]”，因为“user.phone”的验证依赖它");
+        user.put("setting", "abc"); // If 条件参数的上上级不是map
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, validations3);
+        }, "“user.setting”必须是 Map<String, Object>");
+        user.put("setting", setting);
+        setting.put("flags", "abc");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(params, validations3);
+        }, "“user.setting.flags”必须是数组或List");
+        // If 条件参数的类型错误, 应该算条件不成立, 忽略
+        setting.put("flags", new Object[]{"abc", 1.0, new int[0]});
+        Validation.validate(params, validations3);
+        user.remove("alipay");
+        Validation.validate(params, validations3);
+        user.remove("phone");
+        Validation.validate(params, validations3);
+
+        // 多个If串联
+        Validation.validate(new HashMap<String, Object>(){{
+            put("cond", 1);
+            put("param", 2);
+        }}, new String[]{"params", "IfIntGe:cond,1|IfIntLe:cond,1|IntGe:2", null,});
+
+        // If验证器位置不对
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(){{
+                put("cond", 1);
+                put("param", 2);
+            }}, new String[]{"params", "IfIntGe:cond,1|IntGe:2|IfIntLe:cond,1", null,});
+        }, "条件验证器 IfXxx 只能出现在验证规则的开头");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(){{
+                put("cond", 1);
+                put("param", 2);
+            }}, new String[]{"params", "IntGe:2|IfIntGe:cond,1|IfIntLe:cond,1", null,});
+        }, "条件验证器 IfXxx 只能出现在验证规则的开头");
+
+        // 以下测试主要是为了完善测试覆盖率
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(){{
+                put("cond", 1);
+                put("param", 2);
+            }}, new String[]{"params", "If:cond[*]|Int", null,});
+        }, "IfXxx中的条件参数“cond[*]”中不得包含*号");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(){{
+                put("cond", new Integer[]{1,2});
+                put("param", 2);
+            }}, new String[]{"param", "IfIntEq:cond[1],2|IntEq:3", null,});
+        }, "“param”必须等于 3");
+
+    }
+
+    public void testValidate() throws Exception {
+
+        Validation.validate(new HashMap<String, Object>(), new String[0]); // 没有验证规则
+        Validation.validate(new HashMap<String, Object>(), new String[]{"abc", "", null}); // 验证规则为""
+        Validation.validate(new HashMap<String, Object>(){{put("abc", 1);}}, new String[]{"abc", "", null}); // 验证规则为""
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"param"});
+        }, "参数validations格式错误");
+
+        String paramsJson = "{\n" +
+            "    \"id\": 1,\n" +
+            "    \"title\": \"WebGeeker Validation\",\n" +
+            "    \"content\": \"WebGeeker Validation \\u662f\\u4e00\\u4e2a\\u975e\\u5e38\\u5f3a\\u5927\\u7684\\u53c2\\u6570\\u9a8c\\u8bc1\\u5de5\\u5177, \\u80fd\\u591f\\u9a8c\\u8bc1\\u65e0\\u9650\\u5d4c\\u5957\\u7684\\u6570\\u636e\\u7ed3\\u6784\",\n" +
+            "    \"timestamp\": 1491127037.37,\n" +
+            "    \"contentType\": 0,\n" +
+            "    \"author\": {\n" +
+            "        \"id\": 1,\n" +
+            "        \"username\": \"photondragon\",\n" +
+            "        \"nickname\": \"\\u8ff7\\u9014\\u8001\\u7801\",\n" +
+            "        \"email\": \"photondragon@163.com\"\n" +
+            "    },\n" +
+            "    \"comments\": [\n" +
+            "        {\n" +
+            "            \"content\": \"webgeeker\\/validation \\u68d2\\u68d2\\u54d2\",\n" +
+            "            \"author\": {\n" +
+            "                \"email\": \"admin@webgeeker.com\",\n" +
+            "                \"nickname\": \"\\u963f\\u8fbe\\u660e\"\n" +
+            "            }\n" +
+            "        },\n" +
+            "        {\n" +
+            "            \"content\": \"webgeeker\\/validation is amazing!\"\n" +
+            "        }\n" +
+            "    ]\n" +
+            "}";
+        /* params的数据结构(PHP语法)为:
+        [
+            'id' => 1,
+            'title' => 'WebGeeker Validation',
+            'content' => 'WebGeeker Validation 是一个非常强大的参数验证工具, 能够验证无限嵌套的数据结构',
+            'timestamp' => 1491127037.37,
+            'contentType' => 0, // 内容类型. 0-html, 1-txt, 2-markdown
+            'author' => [
+                'id' => 1,
+                'username' => 'photondragon',
+                'nickname' => '迷途老码',
+                'email' => 'photondragon@163.com',
+            ],
+            'comments' => [
+                [
+                    'content' => 'webgeeker/validation 棒棒哒',
+                    'author' => [
+                        'email' => 'admin@webgeeker.com',
+                        'nickname' => '阿达明',
+                    ],
+                ],
+                [
+                    'content' => 'webgeeker/validation is amazing!',
+                ],
+            ],
+        ]*/
+        HashMap<String, Object> params = new HashMap<>();
+        params.putAll(new JSONObject(paramsJson).toMap());
+
+        String[] validations = new String[]{
+            "id", "Required|IntGt:0", null,
+            "title", "Required|StrLenGeLe:2,100", null,
+            "content", "Required|StrLenGe:1|StrLenLe:10000000", null,
+            "timestamp", "FloatGt:0", null,
+            "contentType", "Required|IntIn:0,1,2", null,
+            "author", "Required|Map", null,
+            "author.id", "Required|IntGt:0", null,
+            "author.username", "Required|StrLenGe:4|Regexp:/^[a-zA-Z0-9]+$/", null,
+            "author.nickname", "StrLenGe:0", null,
+            "author.email", "Regexp:/^[a-zA-Z0-9]+@[a-zA-Z0-9-]+.[a-z]+$/", null,
+            "comments", "Arr", null,
+            "comments[*]", "Map", null,
+            "comments[*].content", "Required|StrLenGe:8", null,
+            "comments[*].author", "Map", null,
+            "comments[*].author.email", "Regexp:/^[a-zA-Z0-9]+@[a-zA-Z0-9-]+.[a-z]+$/", null,
+            "comments[*].author.nickname", "StrLenGe:0", null,
+            "visitors", "List", null,
+            "visitors[*]", "Map", null,
+            "visitors[*].id", "Required|IntGt:0", null,
+        };
+
+        Validation.validate(params, new String[0]);
+        Validation.validate(params, validations);
+
+        // ignore Required
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(){{
+                put("content", null);
+            }}, new String[]{"content", "Required|StrLenLe:20", null});
+        }, "必须提供“content”");
+        Validation.validate(new HashMap<String, Object>(){{
+            put("content", null);
+        }}, new String[]{"content", "Required|StrLenLe:20", null}, true);
+
+        // 纯粹为了提高测试覆盖率
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validateValue(123, null);
+        }, "没有提供验证规则");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validateValue(123, new String[0]);
+        }, "没有提供验证规则");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validateValue(123, new String[]{"Haha:3"});
+        }, "未知的验证器\"Haha\"");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validateValue(123, new String[]{":pending"});
+        }, "“:pending”中的':'号前面没有验证器");
+    }
+
+    public void testValidateKeyPath() throws Exception {
+
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"1abc", "", null});
+        }, "参数名称“1abc”不得以数字开头");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"1abc.def", "", null});
+        }, "“1abc.def”中包含了以数字开头的参数名称“1abc”");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"abc.34ab", "", null});
+        }, "“abc.34ab”中包含了以数字开头的参数名称“34ab”");
+
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"[*]", "Map", null});
+        }, "“[*]”中'['号前面没有参数名称");
+
+        Validation.validate(new HashMap<String, Object>(), new String[]{"numbers[*]", "Int", null});
+        Validation.validate(new HashMap<String, Object>(), new String[]{"numbers[0]", "Int", null});
+        Validation.validate(new HashMap<String, Object>(), new String[]{"numbers[0][1]", "Int", null});
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"comments[abc]", "Map", null});
+        }, "“comments[abc]”中的方括号[]之间只能包含'*'号或数字");
+
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"matrix[*]abc[*]", "Int", null});
+        }, "“matrix[*]abc[*]”中的“[*]”之后包含非法字符");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"matrix[*]abc", "Int", null});
+        }, "“matrix[*]abc”中的“[*]”之后包含非法字符");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"matrix[*", "Int", null});
+        }, "“matrix[*”中的'['号之后缺少']'");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"matrix[*][*", "Int", null});
+        }, "“matrix[*][*”中的'['号之后缺少']'");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"matrix[*[*]", "Int", null});
+        }, "“matrix[*[*]”中的方括号[]之间只能包含'*'号或数字");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"matrix[*][aaa]", "Int", null});
+        }, "“matrix[*][aaa]”中的方括号[]之间只能包含*号或数字");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"matrix[0][-110]", "Int", null});
+        }, "非法的参数名称“matrix[0][-110]”");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"", "Int", null});
+        }, "参数validations中包含空的参数名称");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{".", "Int", null});
+        }, "“.”中包含空的参数名称");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"abc..def", "Int", null});
+        }, "“abc..def”中包含空的参数名称");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"abc*", "Int", null});
+        }, "“abc*”中'*'号只能处于方括号[]中");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"abc]", "Int", null});
+        }, "“abc]”中包含了非法的']'号");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"abc]*[", "Int", null});
+        }, "“abc]*[”中'[', ']'顺序颠倒了");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"abc*[*]", "Int", null});
+        }, "“abc*[*]”中包含了非法的'*'号");
+        _assertThrowExpectionContainErrorString(() -> {
+            Validation.validate(new HashMap<String, Object>(), new String[]{"3abc[*]", "Int", null});
+        }, "“3abc[*]”中包含了以数字开头的参数名称“3abc”");
+
+    }
+
 }
