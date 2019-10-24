@@ -33,7 +33,7 @@ Validation.validate(params, new String[] {
     + [4.2 验证浮点型参数](#42-%E9%AA%8C%E8%AF%81%E6%B5%AE%E7%82%B9%E5%9E%8B%E5%8F%82%E6%95%B0)
     + [4.3 验证bool型参数](#43-%E9%AA%8C%E8%AF%81bool%E5%9E%8B%E5%8F%82%E6%95%B0)
     + [4.4 验证字符串型参数](#44-%E9%AA%8C%E8%AF%81%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%9E%8B%E5%8F%82%E6%95%B0)
-    + [4.5 验证数组型、Map型、文件型、日期时间型参数](#45-%E9%AA%8C%E8%AF%81%E6%95%B0%E7%BB%84%E5%9E%8B%E5%AF%B9%E8%B1%A1%E5%9E%8B%E6%96%87%E4%BB%B6%E5%9E%8B%E6%97%A5%E6%9C%9F%E6%97%B6%E9%97%B4%E5%9E%8B%E5%8F%82%E6%95%B0)
+    + [4.5 验证数组型、Map型、文件型、日期时间型参数](#45-%E9%AA%8C%E8%AF%81%E6%95%B0%E7%BB%84%E5%9E%8Bmap%E5%9E%8B%E6%96%87%E4%BB%B6%E5%9E%8B%E6%97%A5%E6%9C%9F%E6%97%B6%E9%97%B4%E5%9E%8B%E5%8F%82%E6%95%B0)
     + [4.6 验证器串联（与）](#46-%E9%AA%8C%E8%AF%81%E5%99%A8%E4%B8%B2%E8%81%94%E4%B8%8E)
     + [4.7 Required 验证器](#47-required-%E9%AA%8C%E8%AF%81%E5%99%A8)
     + [4.8 忽略所有 Required 验证器](#48-%E5%BF%BD%E7%95%A5%E6%89%80%E6%9C%89-required-%E9%AA%8C%E8%AF%81%E5%99%A8)
@@ -44,7 +44,6 @@ Validation.validate(params, new String[] {
     + [4.13 关于基本数据类型与字符串的关系](#413-%E5%85%B3%E4%BA%8E%E5%9F%BA%E6%9C%AC%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E4%B8%8E%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%9A%84%E5%85%B3%E7%B3%BB)
     + [4.14 自定义错误信息输出文本](#414-%E8%87%AA%E5%AE%9A%E4%B9%89%E9%94%99%E8%AF%AF%E4%BF%A1%E6%81%AF%E8%BE%93%E5%87%BA%E6%96%87%E6%9C%AC)
     + [4.15 国际化](#415-%E5%9B%BD%E9%99%85%E5%8C%96)
-    + [4.16 国际化（0.4版之前）](#416-%E5%9B%BD%E9%99%85%E5%8C%9604%E7%89%88%E4%B9%8B%E5%89%8D)
   * [A 附录 - 验证器列表](#a-%E9%99%84%E5%BD%95---%E9%AA%8C%E8%AF%81%E5%99%A8%E5%88%97%E8%A1%A8)
     + [A.1 整型](#a1-%E6%95%B4%E5%9E%8B)
     + [A.2 浮点型](#a2-%E6%B5%AE%E7%82%B9%E5%9E%8B)
@@ -357,6 +356,7 @@ HashMap<String, Object> params = new HashMap<String, Object>() {{
         }});
     }});
 }};
+
 Validation.validate(params, validations);
 ```
 
@@ -420,7 +420,7 @@ String[] validations = new String[]{
 
 如果某个参数的值为`null`，则本工具会视为该参数不存在。
 
-比如下面两个array对于本工具来说是等价的.
+比如下面两个Map对于本工具来说是等价的.
 ```java
 params = new HashMap<String, Object>(){{
     put("name", "hello");
@@ -435,13 +435,13 @@ params = new HashMap<String, Object>(){{
 ```
 是等价的。
 
-为什么本工具会将参数的值为null等价为该参数不存在？
+为什么本工具会将参数的值为`null`等价为该参数不存在？
 
 因为常规的HTTP请求无法传递`null`值，一般情况下客户端如果要发送一个值为`null`的参数，实际的HTTP请求中是没有这个参数的，这样处理歧义是最小的。  
 
-但是有一些客户端不是这么处理的，而是将`null`值转换为字符串`"null"`传递。这种情况服务端很难正确处理，因为无法知道客户端传的是`null`值还是字符串`"null"`。
+但是有一些客户端不是这么处理的，而是将`null`值转换为字符串`"null"`传递。这种情况服务端很难正确处理，因为无法知道客户端传递的原始值是`null`值还是字符串`"null"`。
 
-如果非要从客户端传递`null`值，那只能把所有参数转换为json格式作为Body以POST方式发送请求，并且`Content-Type`要设置为`"application/json"`；然后服务端要手动把json格式的body解析出来，因为servlet的 ServletRequest 不会解析 json 格式的body。
+如果非要从客户端传递`null`值，那只能把所有参数转换为json格式作为Body以POST方式发送请求，并且`Content-Type`要设置为`application/json`；然后服务端要手动把json格式的body解析出来，因为servlet的 ServletRequest 不会解析 json 格式的body。
 
 ### 4.13 关于基本数据类型与字符串的关系
 
