@@ -1731,7 +1731,7 @@ public class ValidationTest
         }
 
         // 多维数组
-        Validation.validate(new HashMap<String, Object>(){{
+        Validation.validate(new HashMap<String, Object>() {{
             put("matrix", new Object[]{
                 new Object[]{1, 2, 345},
                 new Object[]{6, 7, 8},
@@ -1742,7 +1742,7 @@ public class ValidationTest
             "matrix[0][100]", "IntEq:2", null,
         });
         _assertThrowExpectionContainErrorString(() -> {
-            Validation.validate(new HashMap<String, Object>(){{
+            Validation.validate(new HashMap<String, Object>() {{
                 put("matrix", new Object[]{
                     new Object[]{1, 2, "abc"},
                     new Object[]{6, 7, 8},
@@ -1750,7 +1750,7 @@ public class ValidationTest
             }}, new String[]{"matrix[*][*]", "Int", null});
         }, "“matrix[0][2]”必须是整数");
         _assertThrowExpectionContainErrorString(() -> {
-            Validation.validate(new HashMap<String, Object>(){{
+            Validation.validate(new HashMap<String, Object>() {{
                 put("matrix", new Object[]{
                     new Object[]{1, 2, 345},
                     new Object[]{6, "ddd", 8},
@@ -3068,21 +3068,21 @@ public class ValidationTest
         Validation.validate(new HashMap<String, Object>(){{put("article", complaintInfo);}}, validations2);
 
         // If验证器的参数为嵌套的参数
-        HashMap<String, Object> setting = new HashMap<String, Object>(){{
+        HashMap<String, Object> setting = new HashMap<String, Object>() {{
             put("flags", new Integer[]{
                 1,  // 是否绑定了手机
                 1,  // 是否绑定了邮箱
                 1,  // 是否绑定了支付宝
             });
         }};
-        HashMap<String, Object> user = new HashMap<String, Object>(){{
+        HashMap<String, Object> user = new HashMap<String, Object>() {{
             put("name", "hello");
             put("setting", setting);
             put("phone", "18812340001");
             put("email", "18812340001@163.com");
             put("alipay", "18812340001@alipay.com");
         }};
-        HashMap<String, Object> params = new HashMap<String, Object>(){{
+        HashMap<String, Object> params = new HashMap<String, Object>() {{
             put("user", user);
         }};
         String[] validations3 = new String[]{
@@ -3091,7 +3091,7 @@ public class ValidationTest
             "user.alipay", "If:user.setting.flags[2]|Required|StrLenGeLe:1,100", null,
         };
         Validation.validate(params, validations3);
-        setting.put("flags", new Integer[]{1,1}); // If 条件参数的不存在
+        setting.put("flags", new Integer[]{1, 1}); // If 条件参数的不存在
         _assertThrowExpectionContainErrorString(() -> {
             Validation.validate(params, validations3);
         }, "必须提供条件参数“user.setting.flags[2]”，因为“user.alipay”的验证依赖它");
@@ -3125,20 +3125,20 @@ public class ValidationTest
         Validation.validate(params, validations3);
 
         // 多个If串联
-        Validation.validate(new HashMap<String, Object>(){{
+        Validation.validate(new HashMap<String, Object>() {{
             put("cond", 1);
             put("param", 2);
         }}, new String[]{"params", "IfIntGe:cond,1|IfIntLe:cond,1|IntGe:2", null,});
 
         // If验证器位置不对
         _assertThrowExpectionContainErrorString(() -> {
-            Validation.validate(new HashMap<String, Object>(){{
+            Validation.validate(new HashMap<String, Object>() {{
                 put("cond", 1);
                 put("param", 2);
             }}, new String[]{"params", "IfIntGe:cond,1|IntGe:2|IfIntLe:cond,1", null,});
         }, "条件验证器 IfXxx 只能出现在验证规则的开头");
         _assertThrowExpectionContainErrorString(() -> {
-            Validation.validate(new HashMap<String, Object>(){{
+            Validation.validate(new HashMap<String, Object>() {{
                 put("cond", 1);
                 put("param", 2);
             }}, new String[]{"params", "IntGe:2|IfIntGe:cond,1|IfIntLe:cond,1", null,});
@@ -3146,18 +3146,50 @@ public class ValidationTest
 
         // 以下测试主要是为了完善测试覆盖率
         _assertThrowExpectionContainErrorString(() -> {
-            Validation.validate(new HashMap<String, Object>(){{
+            Validation.validate(new HashMap<String, Object>() {{
                 put("cond", 1);
                 put("param", 2);
             }}, new String[]{"params", "If:cond[*]|Int", null,});
         }, "IfXxx中的条件参数“cond[*]”中不得包含*号");
         _assertThrowExpectionContainErrorString(() -> {
-            Validation.validate(new HashMap<String, Object>(){{
-                put("cond", new Integer[]{1,2});
+            Validation.validate(new HashMap<String, Object>() {{
+                put("cond", new Integer[]{1, 2});
                 put("param", 2);
             }}, new String[]{"param", "IfIntEq:cond[1],2|IntEq:3", null,});
         }, "“param”必须等于 3");
 
+    }
+
+    public void testValidateSample1() throws Exception {
+        //验证规则
+        String[] validations = new String[]{
+            "offset", "IntGe:0", null, // 参数offset应该大于等于0
+            "count", "Required|IntGeLe:1,200", null, // 参数count是必需的且大于等于1小于等于200
+            "type", "IntIn:1,2", null, // 参数type可取值为: 1, 2
+            "state", // 参数 state 有两条验证，这两条验证规则是或的关系
+            "IfIntEq:type,1|IntEq:0", // 如果type==1（批评建议），那么参数state只能是0
+            "IfIntEq:type,2|IntIn:0,1,2", // 如果type==2（用户投诉），那么参数state可取值为: 1, 2, 3
+            null,
+            "search.keyword", "StrLenGeLe:1,100", null, // search.keyword 应该是一个长度在[1, 100]之间的字符串
+//            "search.start_time", "Date", null, // search.start_time 应该是一个包含合法日期的字符串
+//            "search.end_time", "Date", null, // search.end_time 应该是一个包含合法日期的字符串
+        };
+
+        // 待验证参数
+        HashMap<String, Object> params = new HashMap<String, Object>() {{
+            put("offset", 0); // 从第0条记录开始
+            put("count", 10); // 最多返回10条记录
+            put("type", 2); // 1-批评建议, 2-用户投诉
+            put("state", 0); // 0-待处理, 1-处理中, 2-已处理
+            put("search", new HashMap<String, Object>() {{ // 搜索条件
+                put("keyword", "硬件故障"); // 关键字
+                put("start_time", "2018-01-01"); // 起始日期
+                put("end_time", "2018-01-31"); // 结束日期
+            }});
+        }};
+
+        // 验证（如果验证不通过，会抛出异常）
+        Validation.validate(params, validations);
     }
 
     public void testValidate() throws Exception {
