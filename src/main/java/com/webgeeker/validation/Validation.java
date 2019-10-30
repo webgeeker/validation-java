@@ -81,11 +81,9 @@ public class Validation {
                     int idx = -1;
                     try {
                         idx = Integer.parseInt(subKey);
-                        if (idx < 0)
-                            throw new ValidationException("请求中包含非法索引值的嵌套参数: " + key);
                         // subKey 应该是数组的索引。不考虑索引值是否乱序的问题
                         isArray = true;
-                    } catch (ValidationException e) {
+                    } catch (Exception e) {
                         // subKey 应该是Map的键
                         char firstChar = subKey.charAt(0);
                         if ((firstChar >= 'a' && firstChar <= 'z') ||
@@ -98,6 +96,8 @@ public class Validation {
                     }
 
                     if (isArray) { // 是list结构
+                        if (idx < 0)
+                            throw new ValidationException("请求中包含非法索引值的嵌套参数: " + key);
                         ArrayList<Object> list;
                         if (fatherCollection instanceof HashMap) {
                             HashMap<String, Object> fatherFatherMap = (HashMap<String, Object>) fatherCollection;
