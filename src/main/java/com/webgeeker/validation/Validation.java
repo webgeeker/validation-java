@@ -1,6 +1,15 @@
 package com.webgeeker.validation;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.MapType;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import jdk.internal.org.objectweb.asm.TypeReference;
+
 import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -22,13 +31,13 @@ public class Validation {
      *
      * @param request 请求
      * @return 返回包含请求中的参数的Map. 这些参数既包含 GET 参数, 也包含 POST 参数, 如果同名, POST参数会覆盖掉同名的GET参数
+     *         永远不会返回null。
      * @throws ValidationException 如果出现名称重复的参数, 会使用最后出现的那个值, 不会抛异常; 如果参数名称或参数路径不合法, 会抛出异常
      */
-    public static HashMap<String, Object> getParameters(ServletRequest request) throws ValidationException {
-        HashMap<String, Object> map = new HashMap<String, Object>();
+    public static HashMap<String, Object> getParameters(HttpServletRequest request) throws ValidationException {
 
         if (request == null)
-            return map;
+            return new HashMap<String, Object>();
 
         /*
          * 根据Servlet规范，如果同时满足下列条件，则请求体(Entity)中的表单数据，将被填充到request的parameter集合中（request.getParameter系列方法可以读取相关数据）：
@@ -38,6 +47,38 @@ public class Validation {
          * 4 Servlet调用了getParameter系列方法
          */
         Map<String, String[]> originalMap = request.getParameterMap(); //
+
+        if (originalMap == null || originalMap.size() == 0) {
+
+            if (!request.getContentType().equalsIgnoreCase("application/json"))
+                return new HashMap<String, Object>();
+
+            TypeFactory factory = TypeFactory.defaultInstance();
+            MapType type = factory.constructMapType(HashMap.class, String.class, Object.class);
+
+            BufferedReader reader;
+            try {
+                reader = request.getReader();
+            } catch (IOException e) {
+                throw new ValidationException("读取请求body失败");
+            }
+
+            HashMap<String, Object> map;
+            try {
+                map = new ObjectMapper().readValue(reader, type);
+                reader.close();
+            } catch (Exception e) {
+                try {
+                    reader.close();
+                } catch (Exception e1) {
+                    // do nothing
+                }
+                throw new ValidationException("解析 Json body 失败");
+            }
+            return map;
+        }
+
+        HashMap<String, Object> map = new HashMap<String, Object>();
 
         for (String key : originalMap.keySet()) {
             String[] values = originalMap.get(key);
