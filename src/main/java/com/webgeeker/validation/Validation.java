@@ -1,15 +1,13 @@
 package com.webgeeker.validation;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import jdk.internal.org.objectweb.asm.TypeReference;
 
-import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -808,6 +806,30 @@ public class Validation {
                         case Type.Map:
                             validateMap(value, validator.reason, aAlias);
                             break;
+                        case Type.Date:
+                            validateDate(value, validator.reason, aAlias);
+                            break;
+                        case Type.DateFrom:
+                            validateDateFrom(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            break;
+                        case Type.DateTo:
+                            validateDateTo(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            break;
+                        case Type.DateFromTo:
+                            validateDateFromTo(value, (Long) validatorUnit[1], (Long) validatorUnit[2], validator.reason, aAlias);
+                            break;
+                        case Type.DateTime:
+                            validateDateTime(value, validator.reason, aAlias);
+                            break;
+                        case Type.DateTimeFrom:
+                            validateDateTimeFrom(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            break;
+                        case Type.DateTimeTo:
+                            validateDateTimeTo(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            break;
+                        case Type.DateTimeFromTo:
+                            validateDateTimeFromTo(value, (Long) validatorUnit[1], (Long) validatorUnit[2], validator.reason, aAlias);
+                            break;
                         case Type.ByteLen:
                         case Type.ByteLenGe:
                         case Type.ByteLenLe:
@@ -1117,15 +1139,43 @@ public class Validation {
                             break;
                         }
                         case Type.DateFrom:
-                        case Type.DateTo:
-                            throw new ValidationException("暂不支付验证器 " + validatorName);
-                        case Type.DateFromTo:
-                            throw new ValidationException("暂不支付验证器 " + validatorName);
+                        case Type.DateTo: {
+                            Long timestamp = parseParamDateToTimestamp(p);
+                            if (timestamp == null)
+                                throwFormatError(validatorName);
+                            validatorUnit = new Object[]{validatorType, timestamp};
+                            break;
+                        }
+                        case Type.DateFromTo: {
+                            String[] strs = ValidationUtils.split(p, ',');
+                            if (strs.length != 2)
+                                throwFormatError(validatorName);
+                            Long timestamp1 = parseParamDateToTimestamp(strs[0]);
+                            Long timestamp2 = parseParamDateToTimestamp(strs[1]);
+                            if (timestamp1 == null || timestamp2 == null)
+                                throwFormatError(validatorName);
+                            validatorUnit = new Object[]{validatorType, timestamp1, timestamp2};
+                            break;
+                        }
                         case Type.DateTimeFrom:
-                        case Type.DateTimeTo:
-                            throw new ValidationException("暂不支付验证器 " + validatorName);
-                        case Type.DateTimeFromTo:
-                            throw new ValidationException("暂不支付验证器 " + validatorName);
+                        case Type.DateTimeTo: {
+                            Long timestamp = parseParamDateTimeToTimestamp(p);
+                            if (timestamp == null)
+                                throwFormatError(validatorName);
+                            validatorUnit = new Object[]{validatorType, timestamp};
+                            break;
+                        }
+                        case Type.DateTimeFromTo: {
+                            String[] strs = ValidationUtils.split(p, ',');
+                            if (strs.length != 2)
+                                throwFormatError(validatorName);
+                            Long timestamp1 = parseParamDateTimeToTimestamp(strs[0]);
+                            Long timestamp2 = parseParamDateTimeToTimestamp(strs[1]);
+                            if (timestamp1 == null || timestamp2 == null)
+                                throwFormatError(validatorName);
+                            validatorUnit = new Object[]{validatorType, timestamp1, timestamp2};
+                            break;
+                        }
                         case Type.FileMimes: {
                             throw new ValidationException("暂不支付验证器 " + validatorName);
                         }
@@ -1553,6 +1603,48 @@ public class Validation {
             params.add(strs[i]);
         }
         return new Object[]{varName, params};
+    }
+
+    private static ThreadLocal<SimpleDateFormat> localDateFormatter = new ThreadLocal<SimpleDateFormat>();
+
+    // 解析DateXx验证器的参数值. 如果参数值不合法, 返回null
+    private static Long parseParamDateToTimestamp(String string) {
+
+        if (string.indexOf('-') != 4) // 19-01-01这种格式SimpleDateFormat也是能识别的，要排除这种情况
+            return null;
+
+        SimpleDateFormat fmt = localDateFormatter.get();
+        if (fmt == null) {
+            fmt = new SimpleDateFormat("yyyy-MM-dd");
+            localDateFormatter.set(fmt);
+        }
+        try {
+            Date date = fmt.parse(string);
+            return date.getTime() / 1000L;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static ThreadLocal<SimpleDateFormat> localDateTimeFormatter = new ThreadLocal<SimpleDateFormat>();
+
+    // 解析DateTimeXx验证器的参数值. 如果参数值不合法, 返回null
+    private static Long parseParamDateTimeToTimestamp(String string) {
+
+        if (string.indexOf('-') != 4) // "19-01-01 10:30:33"这种格式SimpleDateFormat也是能识别的，要排除这种情况
+            return null;
+
+        SimpleDateFormat fmt = localDateTimeFormatter.get();
+        if (fmt == null) {
+            fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            localDateTimeFormatter.set(fmt);
+        }
+        try {
+            Date date = fmt.parse(string);
+            return date.getTime() / 1000L;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // endregion
@@ -3249,6 +3341,340 @@ public class Validation {
         if (isTypeError)
             throwWithErrorTemplate("Float", "{{param}}", alias);
         throwWithErrorTemplate("FloatGeLt", "{{param}}", alias, "{{min}}", min.toString(), "{{max}}", max.toString());
+        return null; // 永远不会执行这一句
+    }
+
+    // endregion
+
+    // region Date & Time
+
+    protected static String validateDate(Object value, String reason, String alias) throws ValidationException {
+
+        if (value instanceof String) {
+            String dateString = (String) value;
+
+            if (dateString.indexOf('-') == 4) { // 19-01-01这种格式SimpleDateFormat也是能识别的，要排除这种情况
+
+                SimpleDateFormat fmt = localDateFormatter.get();
+                if (fmt == null) {
+                    fmt = new SimpleDateFormat("yyyy-MM-dd");
+                    localDateFormatter.set(fmt);
+                }
+
+                try {
+                    fmt.parse(dateString);
+                    return dateString;
+                } catch (Exception e) {
+                    //
+                }
+            }
+        }
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        throwWithErrorTemplate("Date", "{{param}}", alias);
+        return null; // 永远不会执行这一句
+    }
+
+    protected static String validateDateFrom(Object value, Long fromTimestamp, String reason, String alias) throws ValidationException {
+
+        boolean isTypeError;
+
+        String dateString;
+        if (value instanceof String) {
+            dateString = (String) value;
+            if (dateString.indexOf('-') != 4) { // 19-01-01这种格式SimpleDateFormat也是能识别的，要排除这种情况
+                isTypeError = true;
+            } else {
+                SimpleDateFormat fmt = localDateFormatter.get();
+                if (fmt == null) {
+                    fmt = new SimpleDateFormat("yyyy-MM-dd");
+                    localDateFormatter.set(fmt);
+                }
+
+                try {
+                    Date date = fmt.parse(dateString);
+                    long timestamp = date.getTime() / 1000L;
+                    if (timestamp >= fromTimestamp)
+                        return dateString;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true;
+                }
+            }
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Date", "{{param}}", alias);
+
+        SimpleDateFormat fmt = localDateFormatter.get();
+        if (fmt == null) {
+            fmt = new SimpleDateFormat("yyyy-MM-dd");
+            localDateFormatter.set(fmt);
+        }
+        String fromDateString = fmt.format(new Date(fromTimestamp * 1000L));
+        throwWithErrorTemplate("DateFrom", "{{param}}", alias, "{{from}}", fromDateString);
+        return null; // 永远不会执行这一句
+    }
+
+    protected static String validateDateTo(Object value, Long toTimestamp, String reason, String alias) throws ValidationException {
+
+        boolean isTypeError;
+
+        String dateString;
+        if (value instanceof String) {
+            dateString = (String) value;
+            if (dateString.indexOf('-') != 4) { // 19-01-01这种格式SimpleDateFormat也是能识别的，要排除这种情况
+                isTypeError = true;
+            } else {
+                SimpleDateFormat fmt = localDateFormatter.get();
+                if (fmt == null) {
+                    fmt = new SimpleDateFormat("yyyy-MM-dd");
+                    localDateFormatter.set(fmt);
+                }
+
+                try {
+                    Date date = fmt.parse(dateString);
+                    long timestamp = date.getTime() / 1000L;
+                    if (timestamp <= toTimestamp)
+                        return dateString;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true;
+                }
+            }
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Date", "{{param}}", alias);
+
+        SimpleDateFormat fmt = localDateFormatter.get();
+        if (fmt == null) {
+            fmt = new SimpleDateFormat("yyyy-MM-dd");
+            localDateFormatter.set(fmt);
+        }
+        String toDateString = fmt.format(new Date(toTimestamp * 1000L));
+        throwWithErrorTemplate("DateTo", "{{param}}", alias, "{{to}}", toDateString);
+        return null; // 永远不会执行这一句
+    }
+
+    protected static String validateDateFromTo(Object value, Long fromTimestamp, Long toTimestamp, String reason, String alias) throws ValidationException {
+
+        boolean isTypeError;
+
+        String dateString;
+        if (value instanceof String) {
+            dateString = (String) value;
+            if (dateString.indexOf('-') != 4) { // 19-01-01这种格式SimpleDateFormat也是能识别的，要排除这种情况
+                isTypeError = true;
+            } else {
+                SimpleDateFormat fmt = localDateFormatter.get();
+                if (fmt == null) {
+                    fmt = new SimpleDateFormat("yyyy-MM-dd");
+                    localDateFormatter.set(fmt);
+                }
+
+                try {
+                    Date date = fmt.parse(dateString);
+                    long timestamp = date.getTime() / 1000L;
+                    if (timestamp >= fromTimestamp && timestamp <= toTimestamp)
+                        return dateString;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true;
+                }
+            }
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Date", "{{param}}", alias);
+
+        SimpleDateFormat fmt = localDateFormatter.get();
+        if (fmt == null) {
+            fmt = new SimpleDateFormat("yyyy-MM-dd");
+            localDateFormatter.set(fmt);
+        }
+        String fromDateString = fmt.format(new Date(fromTimestamp * 1000L));
+        String toDateString = fmt.format(new Date(toTimestamp * 1000L));
+        throwWithErrorTemplate("DateFromTo", "{{param}}", alias, "{{from}}", fromDateString, "{{to}}", toDateString);
+        return null; // 永远不会执行这一句
+    }
+
+    protected static String validateDateTime(Object value, String reason, String alias) throws ValidationException {
+
+        if (value instanceof String) {
+            String dateString = (String) value;
+
+            if (dateString.indexOf('-') == 4) { // "19-01-01 10:30:33"这种格式SimpleDateFormat也是能识别的，要排除这种情况
+
+                SimpleDateFormat fmt = localDateTimeFormatter.get();
+                if (fmt == null) {
+                    fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    localDateTimeFormatter.set(fmt);
+                }
+
+                try {
+                    fmt.parse(dateString);
+                    return dateString;
+                } catch (Exception e) {
+                    //
+                }
+            }
+        }
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        throwWithErrorTemplate("DateTime", "{{param}}", alias);
+        return null; // 永远不会执行这一句
+    }
+
+    protected static String validateDateTimeFrom(Object value, Long fromTimestamp, String reason, String alias) throws ValidationException {
+
+        boolean isTypeError;
+
+        String dateString;
+        if (value instanceof String) {
+            dateString = (String) value;
+            if (dateString.indexOf('-') != 4) { // "19-01-01 10:30:33"这种格式SimpleDateFormat也是能识别的，要排除这种情况
+                isTypeError = true;
+            } else {
+                SimpleDateFormat fmt = localDateTimeFormatter.get();
+                if (fmt == null) {
+                    fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    localDateTimeFormatter.set(fmt);
+                }
+
+                try {
+                    Date date = fmt.parse(dateString);
+                    long timestamp = date.getTime() / 1000L;
+                    if (timestamp >= fromTimestamp)
+                        return dateString;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true;
+                }
+            }
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("DateTime", "{{param}}", alias);
+
+        SimpleDateFormat fmt = localDateTimeFormatter.get();
+        if (fmt == null) {
+            fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            localDateTimeFormatter.set(fmt);
+        }
+        String fromDateString = fmt.format(new Date(fromTimestamp * 1000L));
+        throwWithErrorTemplate("DateTimeFrom", "{{param}}", alias, "{{from}}", fromDateString);
+        return null; // 永远不会执行这一句
+    }
+
+    protected static String validateDateTimeTo(Object value, Long toTimestamp, String reason, String alias) throws ValidationException {
+
+        boolean isTypeError;
+
+        String dateString;
+        if (value instanceof String) {
+            dateString = (String) value;
+            if (dateString.indexOf('-') != 4) { // "19-01-01 10:30:33"这种格式SimpleDateFormat也是能识别的，要排除这种情况
+                isTypeError = true;
+            } else {
+                SimpleDateFormat fmt = localDateTimeFormatter.get();
+                if (fmt == null) {
+                    fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    localDateTimeFormatter.set(fmt);
+                }
+
+                try {
+                    Date date = fmt.parse(dateString);
+                    long timestamp = date.getTime() / 1000L;
+                    if (timestamp < toTimestamp)
+                        return dateString;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true;
+                }
+            }
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("DateTime", "{{param}}", alias);
+
+        SimpleDateFormat fmt = localDateTimeFormatter.get();
+        if (fmt == null) {
+            fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            localDateTimeFormatter.set(fmt);
+        }
+        String toDateString = fmt.format(new Date(toTimestamp * 1000L));
+        throwWithErrorTemplate("DateTimeTo", "{{param}}", alias, "{{to}}", toDateString);
+        return null; // 永远不会执行这一句
+    }
+
+    protected static String validateDateTimeFromTo(Object value, Long fromTimestamp, Long toTimestamp, String reason, String alias) throws ValidationException {
+
+        boolean isTypeError;
+
+        String dateString;
+        if (value instanceof String) {
+            dateString = (String) value;
+            if (dateString.indexOf('-') != 4) { // "19-01-01 10:30:33"这种格式SimpleDateFormat也是能识别的，要排除这种情况
+                isTypeError = true;
+            } else {
+                SimpleDateFormat fmt = localDateTimeFormatter.get();
+                if (fmt == null) {
+                    fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    localDateTimeFormatter.set(fmt);
+                }
+
+                try {
+                    Date date = fmt.parse(dateString);
+                    long timestamp = date.getTime() / 1000L;
+                    if (timestamp >= fromTimestamp && timestamp < toTimestamp)
+                        return dateString;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true;
+                }
+            }
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("DateTime", "{{param}}", alias);
+
+        SimpleDateFormat fmt = localDateTimeFormatter.get();
+        if (fmt == null) {
+            fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            localDateTimeFormatter.set(fmt);
+        }
+        String fromDateString = fmt.format(new Date(fromTimestamp * 1000L));
+        String toDateString = fmt.format(new Date(toTimestamp * 1000L));
+        throwWithErrorTemplate("DateTimeFromTo", "{{param}}", alias, "{{from}}", fromDateString, "{{to}}", toDateString);
         return null; // 永远不会执行这一句
     }
 

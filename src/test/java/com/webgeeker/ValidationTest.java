@@ -1555,6 +1555,198 @@ public class ValidationTest
 
     }
 
+    public void testValidateDate() throws Exception {
+        HashMap<String, Object> params = new HashMap<>();
+        String[] dateVals;
+        Object[] notDateVals;
+
+        // Date
+        dateVals = new String[] {"2017-06-01", "2017-6-1", "2017-6-01", "2017-06-1"};
+        for (String dateVal : dateVals) {
+            params.put("date", dateVal);
+            Validation.validate(params, new String[]{"date", "Date", null});
+        }
+        notDateVals = new Object[]{"17-6-1", "2017 6 1", "2017/6/1", "2017-06", true, 1.0, "345", new String[0]};
+        for (Object notDateVal : notDateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("date", notDateVal);
+                Validation.validate(params, new String[]{"date", "Date", null});
+            }, "必须符合日期格式YYYY-MM-DD");
+        }
+
+        // DateFrom
+        dateVals = new String[] {"2017-06-15", "2017-6-16"};
+        for (String dateVal : dateVals) {
+            params.put("date", dateVal);
+            Validation.validate(params, new String[]{"date", "DateFrom:2017-06-15", null});
+        }
+        dateVals = new String[]{"2017-06-14", "2011-6-1"};
+        for (String dateVal : dateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("date", dateVal);
+                Validation.validate(params, new String[]{"date", "DateFrom:2017-06-15", null});
+            }, "不得早于 2017-06-15");
+        }
+        notDateVals = new Object[]{"17-6-1", "2017 6 1", "2017/6/1", "2017-06", true, 1.0, "345", new String[0]};
+        for (Object notDateVal : notDateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("date", notDateVal);
+                Validation.validate(params, new String[]{"date", "DateFrom:2017-06-15", null});
+            }, "必须符合日期格式YYYY-MM-DD");
+        }
+        _assertThrowExpectionContainErrorString(() -> {
+            params.put("date", "2017-06-15");
+            Validation.validate(params, new String[]{"date", "DateFrom:2017/06/15", null});
+        }, "验证器 DateFrom 格式错误. 正确的格式示例: DateFrom:2017-04-13");
+
+        // DateTo
+        dateVals = new String[] {"2017-06-15", "2017-6-14"};
+        for (String dateVal : dateVals) {
+            params.put("date", dateVal);
+            Validation.validate(params, new String[]{"date", "DateTo:2017-06-15", null});
+        }
+        dateVals = new String[]{"2017-06-16", "2017-6-17"};
+        for (String dateVal : dateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("date", dateVal);
+                Validation.validate(params, new String[]{"date", "DateTo:2017-06-15", null});
+            }, "不得晚于 2017-06-15");
+        }
+        notDateVals = new Object[]{"17-6-1", "2017 6 1", "2017/6/1", "2017-06", true, 1.0, "345", new String[0]};
+        for (Object notDateVal : notDateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("date", notDateVal);
+                Validation.validate(params, new String[]{"date", "DateTo:2017-06-15", null});
+            }, "必须符合日期格式YYYY-MM-DD");
+        }
+        _assertThrowExpectionContainErrorString(() -> {
+            params.put("date", "2017-06-15");
+            Validation.validate(params, new String[]{"date", "DateTo:2017/06/15", null});
+        }, "验证器 DateTo 格式错误. 正确的格式示例: DateTo:2017-04-13");
+
+        // DateFromTo
+        dateVals = new String[] {"2017-06-15", "2017-6-14", "2017-6-10", "2017-6-20"};
+        for (String dateVal : dateVals) {
+            params.put("date", dateVal);
+            Validation.validate(params, new String[]{"date", "DateFromTo:2017-06-10,2017-06-20", null});
+        }
+        dateVals = new String[]{"2017-06-9", "2017-6-21"};
+        for (String dateVal : dateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("date", dateVal);
+                Validation.validate(params, new String[]{"date", "DateFromTo:2017-06-10,2017-06-20", null});
+            }, "必须在 2017-06-10 ~ 2017-06-20 之间");
+        }
+        notDateVals = new Object[]{"17-6-1", "2017 6 1", "2017/6/1", "2017-06", true, 1.0, "345", new String[0]};
+        for (Object notDateVal : notDateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("date", notDateVal);
+                Validation.validate(params, new String[]{"date", "DateFromTo:2017-06-10,2017-06-20", null});
+            }, "必须符合日期格式YYYY-MM-DD");
+        }
+        _assertThrowExpectionContainErrorString(() -> {
+            params.put("date", "2017-06-15");
+            Validation.validate(params, new String[]{"date", "DateFromTo:2017-06-15", null});
+        }, "验证器 DateFromTo 格式错误. 正确的格式示例: DateFromTo:2017-04-13,2017-04-13");
+
+    }
+
+    public void testValidateDateTime() throws Exception {
+        HashMap<String, Object> params = new HashMap<>();
+        String[] dateVals;
+        Object[] notDateVals;
+
+        // DateTime
+        dateVals = new String[] {"2017-06-01 12:00:00", "2017-6-1 12:00:00", "2017-6-01 12:00:00", "2017-06-1 12:00:00"};
+        for (String dateVal : dateVals) {
+            params.put("datetime", dateVal);
+            Validation.validate(params, new String[]{"datetime", "DateTime", null});
+        }
+        notDateVals = new Object[]{"2017-06-01 12:00:aa", "2017-06-01 12:00", "2017-06-01 12/00/00", "17-06-01 12:00:00", "2017-06-01", "17-6-1", "2017 6 1", "2017/6/1", "2017-06", true, 1.0, "345", new String[0]};
+        for (Object notDateVal : notDateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("datetime", notDateVal);
+                Validation.validate(params, new String[]{"datetime", "DateTime", null});
+            }, "必须符合日期时间格式YYYY-MM-DD HH:mm:ss");
+        }
+
+        // DateTimeFrom
+        dateVals = new String[] {"2017-06-15 12:00:00", "2017-6-15 12:00:01"};
+        for (String dateVal : dateVals) {
+            params.put("datetime", dateVal);
+            Validation.validate(params, new String[]{"datetime", "DateTimeFrom:2017-06-15 12:00:00", null});
+        }
+        dateVals = new String[]{"2017-06-15 11:59:59", "2017-6-15 00:00:00"};
+        for (String dateVal : dateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("datetime", dateVal);
+                Validation.validate(params, new String[]{"datetime", "DateTimeFrom:2017-06-15 12:00:00", null});
+            }, "不得早于 2017-06-15 12:00:00");
+        }
+        notDateVals = new Object[]{"2017-06-01 12:00:aa", "2017-06-01 12:00", "2017-06-01 12/00/00", "17-06-01 12:00:00", "2017-06-01", "17-6-1", "2017 6 1", "2017/6/1", "2017-06", true, 1.0, "345", new String[0]};
+        for (Object notDateVal : notDateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("datetime", notDateVal);
+                Validation.validate(params, new String[]{"datetime", "DateTimeFrom:2017-06-15 12:00:00", null});
+            }, "必须符合日期时间格式YYYY-MM-DD HH:mm:ss");
+        }
+        _assertThrowExpectionContainErrorString(() -> {
+            params.put("datetime", "2017-06-15 12:00:00");
+            Validation.validate(params, new String[]{"datetime", "DateTimeFrom:2017-06-15 12/00/00", null});
+        }, "验证器 DateTimeFrom 格式错误. 正确的格式示例: DateTimeFrom:2017-04-13 12:00:00");
+
+        // DateTimeTo
+        dateVals = new String[] {"2017-06-15 11:59:59", "2017-6-15 11:59:58"};
+        for (String dateVal : dateVals) {
+            params.put("datetime", dateVal);
+            Validation.validate(params, new String[]{"datetime", "DateTimeTo:2017-06-15 12:00:00", null});
+        }
+        dateVals = new String[]{"2017-06-15 12:00:01", "2017-6-15 12:00:02"};
+        for (String dateVal : dateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("datetime", dateVal);
+                Validation.validate(params, new String[]{"datetime", "DateTimeTo:2017-06-15 12:00:00", null});
+            }, "必须早于 2017-06-15 12:00:00");
+        }
+        notDateVals = new Object[]{"2017-06-01 12:00:aa", "2017-06-01 12:00", "2017-06-01 12/00/00", "17-06-01 12:00:00", "2017-06-01", "17-6-1", "2017 6 1", "2017/6/1", "2017-06", true, 1.0, "345", new String[0]};
+        for (Object notDateVal : notDateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("datetime", notDateVal);
+                Validation.validate(params, new String[]{"datetime", "DateTimeTo:2017-06-15 12:00:00", null});
+            }, "必须符合日期时间格式YYYY-MM-DD HH:mm:ss");
+        }
+        _assertThrowExpectionContainErrorString(() -> {
+            params.put("datetime", "2017-06-15 12:00:00");
+            Validation.validate(params, new String[]{"datetime", "DateTimeTo:2017-06-15 12/00/00", null});
+        }, "验证器 DateTimeTo 格式错误. 正确的格式示例: DateTimeTo:2017-04-13 12:00:00");
+
+        // DateTimeFromTo
+        dateVals = new String[] {"2017-06-15 12:00:00", "2017-06-15 12:30:00", "2017-06-15 12:59:59"};
+        for (String dateVal : dateVals) {
+            params.put("datetime", dateVal);
+            Validation.validate(params, new String[]{"datetime", "DateTimeFromTo:2017-06-15 12:00:00,2017-06-15 13:00:00", null});
+        }
+        dateVals = new String[]{"2017-06-15 11:59:59", "2017-06-15 13:00:00"};
+        for (String dateVal : dateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("datetime", dateVal);
+                Validation.validate(params, new String[]{"datetime", "DateTimeFromTo:2017-06-15 12:00:00,2017-06-15 13:00:00", null});
+            }, "必须在 2017-06-15 12:00:00 ~ 2017-06-15 13:00:00 之间");
+        }
+        notDateVals = new Object[]{"2017-06-01 12:00:aa", "2017-06-01 12:00", "2017-06-01 12/00/00", "17-06-01 12:00:00", "2017-06-01", "17-6-1", "2017 6 1", "2017/6/1", "2017-06", true, 1.0, "345", new String[0]};
+        for (Object notDateVal : notDateVals) {
+            _assertThrowExpectionContainErrorString(() -> {
+                params.put("datetime", notDateVal);
+                Validation.validate(params, new String[]{"datetime", "DateTimeFromTo:2017-06-15 12:00:00,2017-06-15 13:00:00", null});
+            }, "必须符合日期时间格式YYYY-MM-DD HH:mm:ss");
+        }
+        _assertThrowExpectionContainErrorString(() -> {
+            params.put("datetime", "2017-06-15 12:00:00");
+            Validation.validate(params, new String[]{"datetime", "DateTimeFromTo:2017-06-15", null});
+        }, "验证器 DateTimeFromTo 格式错误. 正确的格式示例: DateTimeFromTo:2017-04-13 12:00:00,2017-04-13 12:00:00");
+
+    }
+
     public void testValidateList() throws Exception {
         HashMap<String, Object> params = new HashMap<>();
         Object[] listVals;
