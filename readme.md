@@ -96,8 +96,8 @@ String[] validations = new String[]{
     "IfIntEq:type,2|IntIn:0,1,2", // 如果type==2（用户投诉），那么参数state可取值为: 1, 2, 3
     null,
     "search.keyword", "StrLenGeLe:1,100", null, // search.keyword 应该是一个长度在[1, 100]之间的字符串
-//    "search.start_time", "Date", null, // search.start_time 应该是一个包含合法日期的字符串
-//    "search.end_time", "Date", null, // search.end_time 应该是一个包含合法日期的字符串
+    "search.start_time", "Date", null, // search.start_time 应该是一个包含合法日期的字符串
+    "search.end_time", "Date", null, // search.end_time 应该是一个包含合法日期的字符串
 };
 
 // 待验证参数
@@ -615,8 +615,6 @@ Validation.validate(params, new String[]{
 | FileMimes | FileMimes:mpeg,jpeg,png | “{{param}}”必须是这些MIME类型的文件:{{mimes}} |
 
 ### A.8 日期和时间型
-
-*尚未实现*
 
 | 日期和时间型验证器 | 示例 | 说明 |
 | :------| :------ | :------ |
