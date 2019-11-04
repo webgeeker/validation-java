@@ -37,19 +37,8 @@ public class Validation {
         if (request == null)
             return new HashMap<String, Object>();
 
-        /*
-         * 根据Servlet规范，如果同时满足下列条件，则请求体(Entity)中的表单数据，将被填充到request的parameter集合中（request.getParameter系列方法可以读取相关数据）：
-         * 1 这是一个HTTP/HTTPS请求
-         * 2 请求方法是POST（querystring无论是否POST都将被设置到parameter中）
-         * 3 请求的类型（Content-Type头）是application/x-www-form-urlencoded
-         * 4 Servlet调用了getParameter系列方法
-         */
-        Map<String, String[]> originalMap = request.getParameterMap(); //
-
-        if (originalMap == null || originalMap.size() == 0) {
-
-            if (!request.getContentType().equalsIgnoreCase("application/json"))
-                return new HashMap<String, Object>();
+        if ("POST".equals(request.getMethod()) &&
+            "application/json".equalsIgnoreCase(request.getContentType())) {
 
             TypeFactory factory = TypeFactory.defaultInstance();
             MapType type = factory.constructMapType(HashMap.class, String.class, Object.class);
@@ -75,6 +64,18 @@ public class Validation {
             }
             return map;
         }
+
+        /*
+         * 根据Servlet规范，如果同时满足下列条件，则请求体(Entity)中的表单数据，将被填充到request的parameter集合中（request.getParameter系列方法可以读取相关数据）：
+         * 1 这是一个HTTP/HTTPS请求
+         * 2 请求方法是POST（querystring无论是否POST都将被设置到parameter中）
+         * 3 请求的类型（Content-Type头）是application/x-www-form-urlencoded
+         * 4 Servlet调用了getParameter系列方法
+         */
+        Map<String, String[]> originalMap = request.getParameterMap(); //
+
+        if (originalMap == null)
+            return new HashMap<String, Object>();
 
         HashMap<String, Object> map = new HashMap<String, Object>();
 
