@@ -40,6 +40,11 @@ public class Validation {
         if ("POST".equals(request.getMethod()) &&
             "application/json".equalsIgnoreCase(request.getContentType())) {
 
+            @SuppressWarnings("unchecked")
+            HashMap<String, Object> map = (HashMap<String, Object>) request.getAttribute("cachedMapOfBodyJson20191202163708");
+            if (map != null)
+                return map;
+
             TypeFactory factory = TypeFactory.defaultInstance();
             MapType type = factory.constructMapType(HashMap.class, String.class, Object.class);
 
@@ -50,9 +55,9 @@ public class Validation {
                 throw new ValidationException("读取请求body失败");
             }
 
-            HashMap<String, Object> map;
             try {
                 map = new ObjectMapper().readValue(reader, type);
+                request.setAttribute("cachedMapOfBodyJson20191202163708", map); // 在当前request中缓存json解析结果
                 reader.close();
             } catch (Exception e) {
                 try {
