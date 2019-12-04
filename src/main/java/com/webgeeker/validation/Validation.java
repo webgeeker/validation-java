@@ -38,7 +38,7 @@ public class Validation {
             return new HashMap<String, Object>();
 
         if ("POST".equals(request.getMethod()) &&
-            "application/json".equalsIgnoreCase(request.getContentType())) {
+            "application/json".equalsIgnoreCase(request.getContentType().substring(0, 16))) {
 
             @SuppressWarnings("unchecked")
             HashMap<String, Object> map = (HashMap<String, Object>) request.getAttribute("cachedMapOfBodyJson20191202163708");
