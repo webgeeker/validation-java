@@ -42,34 +42,34 @@ public class Validation {
             String contentType = request.getContentType();
             if (contentType != null && "application/json".equalsIgnoreCase(contentType.substring(0, 16))) {
 
-            @SuppressWarnings("unchecked")
-            HashMap<String, Object> map = (HashMap<String, Object>) request.getAttribute("cachedMapOfBodyJson20191202163708");
-            if (map != null)
-                return map;
+                @SuppressWarnings("unchecked")
+                HashMap<String, Object> map = (HashMap<String, Object>) request.getAttribute("cachedMapOfBodyJson20191202163708");
+                if (map != null)
+                    return map;
 
-            TypeFactory factory = TypeFactory.defaultInstance();
-            MapType type = factory.constructMapType(HashMap.class, String.class, Object.class);
+                TypeFactory factory = TypeFactory.defaultInstance();
+                MapType type = factory.constructMapType(HashMap.class, String.class, Object.class);
 
-            BufferedReader reader;
-            try {
-                reader = request.getReader();
-            } catch (IOException e) {
-                throw new ValidationException("读取请求body失败");
-            }
-
-            try {
-                map = new ObjectMapper().readValue(reader, type);
-                request.setAttribute("cachedMapOfBodyJson20191202163708", map); // 在当前request中缓存json解析结果
-                reader.close();
-            } catch (Exception e) {
+                BufferedReader reader;
                 try {
-                    reader.close();
-                } catch (Exception e1) {
-                    // do nothing
+                    reader = request.getReader();
+                } catch (IOException e) {
+                    throw new ValidationException("读取请求body失败");
                 }
-                throw new ValidationException("解析 Json body 失败");
-            }
-            return map;
+
+                try {
+                    map = new ObjectMapper().readValue(reader, type);
+                    request.setAttribute("cachedMapOfBodyJson20191202163708", map); // 在当前request中缓存json解析结果
+                    reader.close();
+                } catch (Exception e) {
+                    try {
+                        reader.close();
+                    } catch (Exception e1) {
+                        // do nothing
+                    }
+                    throw new ValidationException("解析 Json body 失败");
+                }
+                return map;
             } // end content-type == json
         } // end method == post
 
