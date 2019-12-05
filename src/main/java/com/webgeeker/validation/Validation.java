@@ -37,8 +37,10 @@ public class Validation {
         if (request == null)
             return new HashMap<String, Object>();
 
-        if ("POST".equals(request.getMethod()) &&
-            "application/json".equalsIgnoreCase(request.getContentType().substring(0, 16))) {
+        if ("POST".equals(request.getMethod())) {
+
+            String contentType = request.getContentType();
+            if (contentType != null && "application/json".equalsIgnoreCase(contentType.substring(0, 16))) {
 
             @SuppressWarnings("unchecked")
             HashMap<String, Object> map = (HashMap<String, Object>) request.getAttribute("cachedMapOfBodyJson20191202163708");
@@ -68,7 +70,8 @@ public class Validation {
                 throw new ValidationException("解析 Json body 失败");
             }
             return map;
-        }
+            } // end content-type == json
+        } // end method == post
 
         /*
          * 根据Servlet规范，如果同时满足下列条件，则请求体(Entity)中的表单数据，将被填充到request的parameter集合中（request.getParameter系列方法可以读取相关数据）：
