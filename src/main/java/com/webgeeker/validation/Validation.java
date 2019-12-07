@@ -573,6 +573,30 @@ public class Validation {
                         case Type.IfIntNotIn:
                             ifResult = checkIfIntNotIn(ifParamValue, (List<Integer>) validatorUnit[2]);
                             break;
+                        case Type.IfLongEq:
+                            ifResult = checkIfLongEq(ifParamValue, (Long) validatorUnit[2]);
+                            break;
+                        case Type.IfLongNe:
+                            ifResult = checkIfLongNe(ifParamValue, (Long) validatorUnit[2]);
+                            break;
+                        case Type.IfLongGt:
+                            ifResult = checkIfLongGt(ifParamValue, (Long) validatorUnit[2]);
+                            break;
+                        case Type.IfLongGe:
+                            ifResult = checkIfLongGe(ifParamValue, (Long) validatorUnit[2]);
+                            break;
+                        case Type.IfLongLt:
+                            ifResult = checkIfLongLt(ifParamValue, (Long) validatorUnit[2]);
+                            break;
+                        case Type.IfLongLe:
+                            ifResult = checkIfLongLe(ifParamValue, (Long) validatorUnit[2]);
+                            break;
+                        case Type.IfLongIn:
+                            ifResult = checkIfLongIn(ifParamValue, (List<Long>) validatorUnit[2]);
+                            break;
+                        case Type.IfLongNotIn:
+                            ifResult = checkIfLongNotIn(ifParamValue, (List<Long>) validatorUnit[2]);
+                            break;
                         case Type.IfStrEq:
                             ifResult = checkIfStrEq(ifParamValue, (String) validatorUnit[2]);
                             break;
@@ -662,6 +686,45 @@ public class Validation {
                             break;
                         case Type.IntNotIn:
                             validateIntNotIn(value, (Integer[]) validatorUnit[1], validator.reason, aAlias);
+                            break;
+                        case Type.Long:
+                            validateLong(value, validator.reason, aAlias);
+                            break;
+                        case Type.LongEq:
+                            validateLongEq(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            break;
+                        case Type.LongNe:
+                            validateLongNe(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            break;
+                        case Type.LongGt:
+                            validateLongGt(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            break;
+                        case Type.LongGe:
+                            validateLongGe(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            break;
+                        case Type.LongLt:
+                            validateLongLt(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            break;
+                        case Type.LongLe:
+                            validateLongLe(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            break;
+                        case Type.LongGtLt:
+                            validateLongGtLt(value, (Long) validatorUnit[1], (Long) validatorUnit[2], validator.reason, aAlias);
+                            break;
+                        case Type.LongGeLe:
+                            validateLongGeLe(value, (Long) validatorUnit[1], (Long) validatorUnit[2], validator.reason, aAlias);
+                            break;
+                        case Type.LongGtLe:
+                            validateLongGtLe(value, (Long) validatorUnit[1], (Long) validatorUnit[2], validator.reason, aAlias);
+                            break;
+                        case Type.LongGeLt:
+                            validateLongGeLt(value, (Long) validatorUnit[1], (Long) validatorUnit[2], validator.reason, aAlias);
+                            break;
+                        case Type.LongIn:
+                            validateLongIn(value, (Long[]) validatorUnit[1], validator.reason, aAlias);
+                            break;
+                        case Type.LongNotIn:
+                            validateLongNotIn(value, (Long[]) validatorUnit[1], validator.reason, aAlias);
                             break;
                         case Type.Str:
                             validateStr(value, validator.reason, aAlias);
@@ -993,6 +1056,16 @@ public class Validation {
                             validatorUnit = new Object[]{validatorType, v};
                             break;
                         }
+                        case Type.LongEq:
+                        case Type.LongNe:
+                        case Type.LongGt:
+                        case Type.LongGe:
+                        case Type.LongLt:
+                        case Type.LongLe: {
+                            long v = parseParamLongOrThrow(p, validatorName);
+                            validatorUnit = new Object[]{validatorType, v};
+                            break;
+                        }
                         case Type.StrLen:
                         case Type.StrLenGe:
                         case Type.StrLenLe:
@@ -1021,6 +1094,18 @@ public class Validation {
                             validatorUnit = new Object[]{validatorType, v1, v2};
                             break;
                         }
+                        case Type.LongGtLt:
+                        case Type.LongGeLe:
+                        case Type.LongGtLe:
+                        case Type.LongGeLt:{
+                            String[] vals = p.split(",");
+                            if (vals.length != 2)
+                                throwFormatError(validatorName);
+                            long v1 = parseParamLongOrThrow(vals[0], validatorName);
+                            long v2 = parseParamLongOrThrow(vals[1], validatorName);
+                            validatorUnit = new Object[]{validatorType, v1, v2};
+                            break;
+                        }
                         case Type.StrLenGeLe:
                         case Type.ByteLenGeLe:
                         case Type.ListLenGeLe:
@@ -1039,6 +1124,14 @@ public class Validation {
                             if (ints == null)
                                 throwFormatError(validatorName);
                             validatorUnit = new Object[]{validatorType, ints};
+                            break;
+                        }
+                        case Type.LongIn:
+                        case Type.LongNotIn: {
+                            Long[] longs = parseParamLongArray(p);
+                            if (longs == null)
+                                throwFormatError(validatorName);
+                            validatorUnit = new Object[]{validatorType, longs};
                             break;
                         }
                         case Type.StrEq:
@@ -1076,6 +1169,32 @@ public class Validation {
                             if (units.size() > countOfIfs)
                                 throw new ValidationException("条件验证器 IfXxx 只能出现在验证规则的开头");
                             Object[] params = parseIfXxxWith1ParamNInts(p, validatorName);
+                            if (params == null)
+                                throwFormatError(validatorName);
+                            validatorUnit = new Object[]{validatorType, params[0], params[1]};
+                            countOfIfs++;
+                            break;
+                        }
+                        case Type.IfLongEq:
+                        case Type.IfLongNe:
+                        case Type.IfLongGt:
+                        case Type.IfLongLt:
+                        case Type.IfLongGe:
+                        case Type.IfLongLe: {
+                            if (units.size() > countOfIfs)
+                                throw new ValidationException("条件验证器 IfXxx 只能出现在验证规则的开头");
+                            Object[] params = parseIfXxxWith1Param1Long(p, validatorName);
+                            if (params == null)
+                                throwFormatError(validatorName);
+                            validatorUnit = new Object[]{validatorType, params[0], params[1]};
+                            countOfIfs++;
+                            break;
+                        }
+                        case Type.IfLongIn:
+                        case Type.IfLongNotIn: {
+                            if (units.size() > countOfIfs)
+                                throw new ValidationException("条件验证器 IfXxx 只能出现在验证规则的开头");
+                            Object[] params = parseIfXxxWith1ParamNLongs(p, validatorName);
                             if (params == null)
                                 throwFormatError(validatorName);
                             validatorUnit = new Object[]{validatorType, params[0], params[1]};
@@ -1271,6 +1390,21 @@ public class Validation {
         put("IntIn", "“{{param}}”只能取这些值: {{valueList}}");
         put("IntNotIn", "“{{param}}”不能取这些值: {{valueList}}");
 
+        // 长整型（不提供length检测,因为负数的符号位会让人混乱, 可以用大于小于比较来做到这一点）
+        put("Long", "“{{param}}”必须是长整数");
+        put("LongEq", "“{{param}}”必须等于 {{value}}");
+        put("LongNe", "“{{param}}”不能等于 {{value}}");
+        put("LongGt", "“{{param}}”必须大于 {{min}}");
+        put("LongGe", "“{{param}}”必须大于等于 {{min}}");
+        put("LongLt", "“{{param}}”必须小于 {{max}}");
+        put("LongLe", "“{{param}}”必须小于等于 {{max}}");
+        put("LongGtLt", "“{{param}}”必须大于 {{min}} 小于 {{max}}");
+        put("LongGeLe", "“{{param}}”必须大于等于 {{min}} 小于等于 {{max}}");
+        put("LongGtLe", "“{{param}}”必须大于 {{min}} 小于等于 {{max}}");
+        put("LongGeLt", "“{{param}}”必须大于等于 {{min}} 小于 {{max}}");
+        put("LongIn", "“{{param}}”只能取这些值: {{valueList}}");
+        put("LongNotIn", "“{{param}}”不能取这些值: {{valueList}}");
+
         // 浮点型（内部一律使用double来处理）
         put("Float", "“{{param}}”必须是浮点数");
         put("FloatGt", "“{{param}}”必须大于 {{min}}");
@@ -1446,6 +1580,24 @@ public class Validation {
         }
     }
 
+    // 解析Long型验证器的参数值. 如果参数值不合法, 抛出异常
+    private static long parseParamLongOrThrow(String string, String validatorName) throws ValidationException {
+        if (string == null || string.length() == 0)
+            throw new ValidationException("验证器 " + validatorName + " 的参数必须是一个长整数");
+        for (int i = 0, len = string.length(); i < len; i++) {
+            char c = string.charAt(i);
+            if (c < '0' || c > '9') {
+                if (i != 0 || (c != '+' && c != '-'))
+                    throw new ValidationException("验证器 " + validatorName + " 的参数必须是一个长整数");
+            }
+        }
+        try {
+            return Long.parseLong(string);
+        } catch (Exception e) {
+            throw new ValidationException("验证器 " + validatorName + " 的参数的取值超过长整数的取值范围");
+        }
+    }
+
     // 解析(非负)Int型验证器的参数值. 如果参数值不合法, 抛出异常
     private static int parseParamIntNonNegativeOrThrow(String string, String validatorName) throws ValidationException {
         if (string == null || string.length() == 0)
@@ -1505,6 +1657,33 @@ public class Validation {
     }
 
     /**
+     * 将包含long数组的字符串转为Long数组
+     *
+     * @param string 待解析的字符串, 如: 1,2,3,123
+     * @return 如果是合法的long数组, 并且至少有1个long, 返回Long数组; 否则返回null
+     */
+    private static Long[] parseParamLongArray(String string) throws ValidationException {
+        String[] strs = ValidationUtils.split(string, ',');
+        List<Long> longs = new ArrayList<Long>();
+        for (String str : strs) {
+            if (ValidationUtils.isIntString(str)) {
+                try {
+                    long v = Long.parseLong(str);
+                    longs.add(v);
+                } catch (NumberFormatException e) { // 应该是数值溢出, 暂时视为数据类型错误
+                    return null;
+                }
+            } else {
+                return null;
+            }
+        }
+        if (longs.size() == 0)
+            return null;
+        Long[] arr = new Long[longs.size()];
+        return longs.toArray(arr);
+    }
+
+    /**
      * 将（逗号分隔的）字符串转为字符串数组.
      *
      * 不去重, 因为string是程序员提供的, 可以认为他们不会写错; 即使出现重复, 也不影响最终的验证结果.
@@ -1522,7 +1701,7 @@ public class Validation {
      * 解析 IfIntXx:varname,123 中的冒号后面的部分（1个条件参数后面带1个Int值）
      * @param string 待解析的字符串, 如: "count,10"
      * @param validatorName 验证器名称 "IfIntXx"
-     * @return 出错返回null, 否则返回 ["varname", 123]
+     * @return 出错返回null, 否则返回 {"varname", 123}
      */
     private static Object[] parseIfXxxWith1Param1Int(String string, String validatorName) throws ValidationException {
         if (string.length() == 0)
@@ -1542,10 +1721,33 @@ public class Validation {
     }
 
     /**
+     * 解析 IfLongXx:varname,123 中的冒号后面的部分（1个条件参数后面带1个Long值）
+     * @param string 待解析的字符串, 如: "count,10"
+     * @param validatorName 验证器名称 "IfLongXx"
+     * @return 出错返回null, 否则返回 {"varname", 123}
+     */
+    private static Object[] parseIfXxxWith1Param1Long(String string, String validatorName) throws ValidationException {
+        if (string.length() == 0)
+            return null;
+
+        String[] strs = ValidationUtils.split(string, ',');
+        if (strs.length != 2)
+            return null;
+
+        String varName = strs[0];
+        if (varName.length() == 0)
+            return null;
+
+        Long value = validateLong(strs[1], "“" + validatorName + ":" + string + "”中“" + varName + "”后面必须是长整数", null);
+
+        return new Object[]{varName, value};
+    }
+
+    /**
      * 解析 IfStrXx:varname,abc 中的冒号后面的部分（1个条件参数后面带1个String值）
      * @param string 待解析的字符串, 如: "sex,male"
      * @param validatorName 验证器名称 "IfStrXx"
-     * @return 出错返回null, 否则返回 ["varname", "abc"]
+     * @return 出错返回null, 否则返回 {"varname", "abc"}
      */
     private static Object[] parseIfXxxWith1Param1Str(String string, String validatorName) throws ValidationException {
         if (string.length() == 0)
@@ -1566,7 +1768,7 @@ public class Validation {
      * 解析 IfIntInXxx:varname,1,2,3 中的冒号后面的部分（1个条件参数后面带多个整数）
      * @param string 待解析的字符串, 如: "states,1,2,3"
      * @param validatorName 验证器名称 "IfIntInXxx"
-     * @return 出错返回null, 否则返回 ["varname", [1,2,3]]
+     * @return 出错返回null, 否则返回 {"varname", List{1,2,3}}
      */
     private static Object[] parseIfXxxWith1ParamNInts(String string, String validatorName) throws ValidationException {
         if (string.length() == 0)
@@ -1584,6 +1786,33 @@ public class Validation {
         for (int i = 1; i < strs.length; i++) {
             String str = strs[i];
             Integer value = validateInt(strs[i], "“" + validatorName + ":" + string + "”中“" + varName + "”后面必须全部是整数，实际上却包含了\"" + str + "\"", null);
+            params.add(value);
+        }
+        return new Object[]{varName, params};
+    }
+
+    /**
+     * 解析 IfLongInXxx:varname,1,2,3 中的冒号后面的部分（1个条件参数后面带多个整数）
+     * @param string 待解析的字符串, 如: "states,1,2,3"
+     * @param validatorName 验证器名称 "IfLongInXxx"
+     * @return 出错返回null, 否则返回 {"varname", List{1L,2L,3L}}
+     */
+    private static Object[] parseIfXxxWith1ParamNLongs(String string, String validatorName) throws ValidationException {
+        if (string.length() == 0)
+            return null;
+
+        String[] strs = ValidationUtils.split(string, ',');
+        if (strs.length < 2)
+            return null;
+
+        String varName = strs[0];
+        if (varName.length() == 0)
+            return null;
+
+        List<Long> params = new ArrayList<>(strs.length - 1);
+        for (int i = 1; i < strs.length; i++) {
+            String str = strs[i];
+            Long value = validateLong(strs[i], "“" + validatorName + ":" + string + "”中“" + varName + "”后面必须全部是整数，实际上却包含了\"" + str + "\"", null);
             params.add(value);
         }
         return new Object[]{varName, params};
@@ -1701,6 +1930,21 @@ public class Validation {
         put("IntIn", "IntIn:2,3,5,7,11");
         put("IntNotIn", "IntNotIn:2,3,5,7,11");
 
+        // 长整型
+        put("Long", "Long");
+        put("LongEq", "LongEq:100");
+        put("LongNe", "LongNe:100");
+        put("LongGt", "LongGt:100");
+        put("LongGe", "LongGe:100");
+        put("LongLt", "LongLt:100");
+        put("LongLe", "LongLe:100");
+        put("LongGtLt", "LongGtLt:1,100");
+        put("LongGeLe", "LongGeLe:1,100");
+        put("LongGtLe", "LongGtLe:1,100");
+        put("LongGeLt", "LongGeLt:1,100");
+        put("LongIn", "LongIn:2,3,5,7,11");
+        put("LongNotIn", "LongNotIn:2,3,5,7,11");
+
         // 浮点型（内部一律使用double来处理）
         put("Float", "Float");
         put("FloatGt", "FloatGt:1.0");
@@ -1794,28 +2038,36 @@ public class Validation {
         put("Required", "Required");
 
         // 条件判断
-        put("If", "If:selected"); // 值是否等于 1, true, '1', 'true', 'yes', 'y'(字符串忽略大小写)
-        put("IfNot", "IfNot:selected"); // 值是否等于 0, false, '0', 'false', 'no', 'n'(字符串忽略大小写)
-        put("IfTrue", "IfTrue:selected"); // 值是否等于 true 或 'true'(忽略大小写)
-        put("IfFalse", "IfFalse:selected"); // 值是否等于 false 或 'false'(忽略大小写)
-        put("IfExist", "IfExist:var"); // 参数 var 是否存在
-        put("IfNotExist", "IfNotExist:var"); // 参数 var 是否不存在
-        put("IfIntEq", "IfIntEq:var,1"); // if (type === 1)
-        put("IfIntNe", "IfIntNe:var,2"); // if (state !== 2). 特别要注意的是如果条件参数var的数据类型不匹配, 那么If条件是成立的; 而其它几个IfIntXx当条件参数var的数据类型不匹配时, If条件不成立
+        put("If", "If:selected"); // 如果参数"selected"值等于 1, true, "1", "true", "yes"或 "y"(字符串忽略大小写)
+        put("IfNot", "IfNot:selected"); // 如果参数"selected"值等于 0, false, "0", "false", "no"或"n"(字符串忽略大小写)
+        put("IfTrue", "IfTrue:selected"); // 如果参数"selected"值等于 true 或 "true"(忽略大小写)
+        put("IfFalse", "IfFalse:selected"); // 如果参数"selected"值等于 false 或 "false"(忽略大小写)
+        put("IfExist", "IfExist:var"); // 如果参数"var"存在
+        put("IfNotExist", "IfNotExist:var"); // 如果参数"var"不存在
+        put("IfIntEq", "IfIntEq:var,1"); // if (type == 1)
+        put("IfIntNe", "IfIntNe:var,2"); // if (state != 2). 特别要注意的是如果条件参数var的数据类型不匹配, 那么If条件是成立的; 而其它几个IfIntXx当条件参数var的数据类型不匹配时, If条件不成立
         put("IfIntGt", "IfIntGt:var,0"); // if (var > 0)
-        put("IfIntLt", "IfIntLt:var,1"); // if (var < 0)
+        put("IfIntLt", "IfIntLt:var,1"); // if (var < 1)
         put("IfIntGe", "IfIntGe:var,6"); // if (var >= 6)
         put("IfIntLe", "IfIntLe:var,8"); // if (var <= 8)
-        put("IfIntIn", "IfIntIn:var,2,3,5,7"); // if (in_array(var, [2,3,5,7]))
-        put("IfIntNotIn", "IfIntNotIn:var,2,3,5,7"); // if (!in_array(var, [2,3,5,7]))
-        put("IfStrEq", "IfStrEq:var,waiting"); // if (type === 'waiting')
-        put("IfStrNe", "IfStrNe:var,editing"); // if (state !== 'editing'). 特别要注意的是如果条件参数var的数据类型不匹配, 那么If条件是成立的; 而其它几个IfStrXx当条件参数var的数据类型不匹配时, If条件不成立
-        put("IfStrGt", "IfStrGt:var,a"); // if (var > 'a')
-        put("IfStrLt", "IfStrLt:var,z"); // if (var < 'z')
-        put("IfStrGe", "IfStrGe:var,A"); // if (var >= '0')
-        put("IfStrLe", "IfStrLe:var,Z"); // if (var <= '9')
-        put("IfStrIn", "IfStrIn:var,normal,warning,error"); // if (in_array(var, ['normal', 'warning', 'error'], true))
-        put("IfStrNotIn", "IfStrNotIn:var,warning,error"); // if (!in_array(var, ['warning', 'error'], true))
+        put("IfIntIn", "IfIntIn:var,2,3,5,7"); // 如果var的值等于2,3,5,7中的某一个
+        put("IfIntNotIn", "IfIntNotIn:var,2,3,5,7"); // 如果var的值不等于2,3,5,7中的任何一个
+        put("IfLongEq", "IfLongEq:var,1"); // if (type == 1L)
+        put("IfLongNe", "IfLongNe:var,2"); // if (state != 2L). 特别要注意的是如果条件参数var的数据类型不匹配, 那么If条件是成立的; 而其它几个IfLongXx当条件参数var的数据类型不匹配时, If条件不成立
+        put("IfLongGt", "IfLongGt:var,0"); // if (var > 0L)
+        put("IfLongLt", "IfLongLt:var,1"); // if (var < 1L)
+        put("IfLongGe", "IfLongGe:var,6"); // if (var >= 6L)
+        put("IfLongLe", "IfLongLe:var,8"); // if (var <= 8L)
+        put("IfLongIn", "IfLongIn:var,2,3,5,7"); // 如果var的值等于2L,3L,5L,7L中的某一个
+        put("IfLongNotIn", "IfLongNotIn:var,2,3,5,7"); // 如果var的值不等于2L,3L,5L,7L中的任何一个
+        put("IfStrEq", "IfStrEq:var,waiting"); // if ("waiting".equals(var))
+        put("IfStrNe", "IfStrNe:var,editing"); // if (!"editing".equals(var)). 特别要注意的是如果条件参数var的数据类型不匹配, 那么If条件是成立的; 而其它几个IfStrXx当条件参数var的数据类型不匹配时, If条件不成立
+        put("IfStrGt", "IfStrGt:var,a"); // if (var.compareTo("a") > 0)
+        put("IfStrLt", "IfStrLt:var,z"); // if (var.compareTo("z") < 0)
+        put("IfStrGe", "IfStrGe:var,A"); // if (var.compareTo("A") >= 0)
+        put("IfStrLe", "IfStrLe:var,Z"); // if (var.compareTo("Z") <= 0)
+        put("IfStrIn", "IfStrIn:var,normal,warning,error"); // 如果var的值等于"normal", "warning", "error"中的某一个
+        put("IfStrNotIn", "IfStrNotIn:var,warning,error"); // 如果var的值不等于"normal", "warning", "error"中的任何一个
 //        put("IfSame", "IfSame:AnotherParameter");
 //        put("IfNotSame", "IfNotSame:AnotherParameter");
 //        put("IfAny", "IfAny:type,1,type,2"); //待定
@@ -2268,6 +2520,521 @@ public class Validation {
                 builder.append(v);
             }
             throwWithErrorTemplate("IntNotIn", "{{param}}", alias, "{{valueList}}", builder.toString());
+        }
+        return null; // 永远不会执行这一句
+    }
+
+    // endregion
+
+    // region Long
+
+    public static Long validateLong(Object value, String reason, String alias) throws ValidationException {
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    return Long.parseLong((String) value);
+                } catch (Exception e) {
+                    // 实际上是数值溢出, 暂时算作类型错误
+                }
+            }
+        } else if (value instanceof Integer) {
+            return ((Integer) value).longValue();
+        } else if (value instanceof Long) {
+            return (Long) value;
+        }
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        throwWithErrorTemplate("Long", "{{param}}", alias);
+        return null; // 永远不会执行这一句
+    }
+
+    public static Long validateLongEq(Object value, Long equalVal, String reason, String alias) throws ValidationException {
+        boolean isTypeError;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    if (val == equalVal)
+                        return val;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                isTypeError = true;
+        } else if (value instanceof Integer) {
+            long valLong = ((Integer) value).longValue();
+            if (equalVal == valLong)
+                return valLong;
+            isTypeError = false;
+        } else if (value instanceof Long) {
+            if (equalVal.longValue() == (Long) value)
+                return (Long) value;
+            isTypeError = false;
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Long", "{{param}}", alias);
+        else
+            throwWithErrorTemplate("LongEq", "{{param}}", alias, "{{value}}", equalVal.toString());
+        return null; // 永远不会执行这一句
+    }
+
+    public static Long validateLongNe(Object value, Long equalVal, String reason, String alias) throws ValidationException {
+        boolean isTypeError;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    if (val != equalVal)
+                        return val;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                isTypeError = true;
+        } else if (value instanceof Integer) {
+            long valLong = ((Integer) value).longValue();
+            if (equalVal != valLong)
+                return valLong;
+            isTypeError = false;
+        } else if (value instanceof Long) {
+            if (equalVal.longValue() != (Long) value)
+                return (Long) value;
+            isTypeError = false;
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Long", "{{param}}", alias);
+        else
+            throwWithErrorTemplate("LongNe", "{{param}}", alias, "{{value}}", equalVal.toString());
+        return null; // 永远不会执行这一句
+    }
+
+    public static Long validateLongGt(Object value, Long min, String reason, String alias) throws ValidationException {
+        boolean isTypeError;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    if (val > min)
+                        return val;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                isTypeError = true;
+        } else if (value instanceof Integer) {
+            long valLong = ((Integer) value).longValue();
+            if (valLong > min)
+                return valLong;
+            isTypeError = false;
+        } else if (value instanceof Long) {
+            if (((Long) value) > min)
+                return (Long) value;
+            isTypeError = false;
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Long", "{{param}}", alias);
+        else
+            throwWithErrorTemplate("LongGt", "{{param}}", alias, "{{min}}", min.toString());
+        return null; // 永远不会执行这一句
+    }
+
+    public static Long validateLongGe(Object value, Long min, String reason, String alias) throws ValidationException {
+        boolean isTypeError;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    if (val >= min)
+                        return val;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                isTypeError = true;
+        } else if (value instanceof Integer) {
+            long valLong = ((Integer) value).longValue();
+            if (valLong >= min)
+                return valLong;
+            isTypeError = false;
+        } else if (value instanceof Long) {
+            if (((Long) value) >= min)
+                return (Long) value;
+            isTypeError = false;
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Long", "{{param}}", alias);
+        else
+            throwWithErrorTemplate("LongGe", "{{param}}", alias, "{{min}}", min.toString());
+        return null; // 永远不会执行这一句
+    }
+
+    public static Long validateLongLt(Object value, Long max, String reason, String alias) throws ValidationException {
+        boolean isTypeError;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    if (val < max)
+                        return val;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                isTypeError = true;
+        } else if (value instanceof Integer) {
+            long valLong = ((Integer) value).longValue();
+            if (valLong < max)
+                return valLong;
+            isTypeError = false;
+        } else if (value instanceof Long) {
+            if (((Long) value) < max)
+                return (Long) value;
+            isTypeError = false;
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Long", "{{param}}", alias);
+        else
+            throwWithErrorTemplate("LongLt", "{{param}}", alias, "{{max}}", max.toString());
+        return null; // 永远不会执行这一句
+    }
+
+    public static Long validateLongLe(Object value, Long max, String reason, String alias) throws ValidationException {
+        boolean isTypeError;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    if (val <= max)
+                        return val;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                isTypeError = true;
+        } else if (value instanceof Integer) {
+            long valLong = ((Integer) value).longValue();
+            if (valLong <= max)
+                return valLong;
+            isTypeError = false;
+        } else if (value instanceof Long) {
+            if (((Long) value) <= max)
+                return (Long) value;
+            isTypeError = false;
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Long", "{{param}}", alias);
+        else
+            throwWithErrorTemplate("LongLe", "{{param}}", alias, "{{max}}", max.toString());
+        return null; // 永远不会执行这一句
+    }
+
+    public static Long validateLongGtLt(Object value, Long min, Long max, String reason, String alias) throws ValidationException {
+        boolean isTypeError;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    if (val > min && val < max)
+                        return val;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                isTypeError = true;
+        } else if (value instanceof Integer) {
+            long valLong = ((Integer) value).longValue();
+            if (valLong > min && valLong < max)
+                return valLong;
+            isTypeError = false;
+        } else if (value instanceof Long) {
+            Long valLong = (Long) value;
+            if (valLong > min && valLong < max)
+                return valLong;
+            isTypeError = false;
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Long", "{{param}}", alias);
+        else
+            throwWithErrorTemplate("LongGtLt", "{{param}}", alias, "{{min}}", min.toString(), "{{max}}", max.toString());
+        return null; // 永远不会执行这一句
+    }
+
+    public static Long validateLongGeLe(Object value, Long min, Long max, String reason, String alias) throws ValidationException {
+        boolean isTypeError;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    if (val >= min && val <= max)
+                        return val;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                isTypeError = true;
+        } else if (value instanceof Integer) {
+            long valLong = ((Integer) value).longValue();
+            if (valLong >= min && valLong <= max)
+                return valLong;
+            isTypeError = false;
+        } else if (value instanceof Long) {
+            Long valLong = (Long) value;
+            if (valLong >= min && valLong <= max)
+                return valLong;
+            isTypeError = false;
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Long", "{{param}}", alias);
+        else
+            throwWithErrorTemplate("LongGeLe", "{{param}}", alias, "{{min}}", min.toString(), "{{max}}", max.toString());
+        return null; // 永远不会执行这一句
+    }
+
+    public static Long validateLongGtLe(Object value, Long min, Long max, String reason, String alias) throws ValidationException {
+        boolean isTypeError;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    if (val > min && val <= max)
+                        return val;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                isTypeError = true;
+        } else if (value instanceof Integer) {
+            long valLong = ((Integer) value).longValue();
+            if (valLong > min && valLong <= max)
+                return valLong;
+            isTypeError = false;
+        } else if (value instanceof Long) {
+            Long valLong = (Long) value;
+            if (valLong > min && valLong <= max)
+                return valLong;
+            isTypeError = false;
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Long", "{{param}}", alias);
+        else
+            throwWithErrorTemplate("LongGtLe", "{{param}}", alias, "{{min}}", min.toString(), "{{max}}", max.toString());
+        return null; // 永远不会执行这一句
+    }
+
+    public static Long validateLongGeLt(Object value, Long min, Long max, String reason, String alias) throws ValidationException {
+        boolean isTypeError;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    if (val >= min && val < max)
+                        return val;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                isTypeError = true;
+        } else if (value instanceof Integer) {
+            long valLong = ((Integer) value).longValue();
+            if (valLong >= min && valLong < max)
+                return valLong;
+            isTypeError = false;
+        } else if (value instanceof Long) {
+            Long valLong = (Long) value;
+            if (valLong >= min && valLong < max)
+                return valLong;
+            isTypeError = false;
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Long", "{{param}}", alias);
+        else
+            throwWithErrorTemplate("LongGeLt", "{{param}}", alias, "{{min}}", min.toString(), "{{max}}", max.toString());
+        return null; // 永远不会执行这一句
+    }
+
+    public static Long validateLongIn(Object value, Long[] inValues, String reason, String alias) throws ValidationException {
+
+        if (inValues == null || inValues.length == 0)
+            throw new ValidationException("必须提供可取值的列表");
+
+        boolean isTypeError;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    for (Long v : inValues) {
+                        if (v == val)
+                            return v;
+                    }
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                isTypeError = true;
+        } else if (value instanceof Integer) {
+            long val = ((Integer) value).longValue();
+            for (Long v : inValues) {
+                if (v == val)
+                    return v;
+            }
+            isTypeError = false;
+        } else if (value instanceof Long) {
+            long val = (Long) value;
+            for (Long v : inValues) {
+                if (v == val)
+                    return v;
+            }
+            isTypeError = false;
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Long", "{{param}}", alias);
+        else {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < inValues.length; i++) {
+                Long v = inValues[i];
+                if (i > 0)
+                    builder.append(", ");
+                builder.append(v);
+            }
+            throwWithErrorTemplate("LongIn", "{{param}}", alias, "{{valueList}}", builder.toString());
+        }
+        return null; // 永远不会执行这一句
+    }
+
+    public static Long validateLongNotIn(Object value, Long[] notInValues, String reason, String alias) throws ValidationException {
+
+        if (notInValues == null || notInValues.length == 0)
+            throw new ValidationException("必须提供不可取值的列表");
+
+        boolean isTypeError;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    boolean in = false;
+                    for (Long v : notInValues) {
+                        if (v == val) {
+                            in = true;
+                            break;
+                        }
+                    }
+                    if (!in)
+                        return val;
+                    isTypeError = false;
+                } catch (Exception e) {
+                    isTypeError = true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                isTypeError = true;
+        } else if (value instanceof Integer) {
+            long val = ((Integer) value).longValue();
+            boolean in = false;
+            for (Long v : notInValues) {
+                if (v == val) {
+                    in = true;
+                    break;
+                }
+            }
+            if (!in)
+                return val;
+            isTypeError = false;
+        } else if (value instanceof Long) {
+            long val = (Long) value;
+            boolean in = false;
+            for (Long v : notInValues) {
+                if (v == val) {
+                    in = true;
+                    break;
+                }
+            }
+            if (!in)
+                return val;
+            isTypeError = false;
+        } else
+            isTypeError = true;
+
+        throwIfHasReason(reason);
+
+        alias = finalAlias(alias);
+        if (isTypeError)
+            throwWithErrorTemplate("Long", "{{param}}", alias);
+        else {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < notInValues.length; i++) {
+                Long v = notInValues[i];
+                if (i > 0)
+                    builder.append(", ");
+                builder.append(v);
+            }
+            throwWithErrorTemplate("LongNotIn", "{{param}}", alias, "{{valueList}}", builder.toString());
         }
         return null; // 永远不会执行这一句
     }
@@ -4054,6 +4821,162 @@ public class Validation {
         return values.indexOf(v) == -1;
     }
 
+    protected static boolean checkIfLongEq(Object value, Long equalVal) {
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    return val == equalVal;
+                } catch (Exception e) {
+                    // 实际上是数值溢出, 暂时算作类型错误
+                }
+            }
+        } else if (value instanceof Integer) {
+            return equalVal == ((Integer) value).longValue();
+        } else if (value instanceof Long) {
+            return equalVal == ((Long) value).longValue();
+        }
+
+        return false;
+    }
+
+    protected static boolean checkIfLongNe(Object value, Long equalVal) {
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    return val != equalVal;
+                } catch (Exception e) {
+                    // 实际上是数值溢出, 暂时算作类型错误
+                }
+            }
+        } else if (value instanceof Integer) {
+            return equalVal != ((Integer) value).longValue();
+        } else if (value instanceof Long) {
+            return equalVal != ((Long) value).longValue();
+        }
+
+        return true;
+    }
+
+    protected static boolean checkIfLongGt(Object value, Long min) {
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    return val > min;
+                } catch (Exception e) {
+                    // 实际上是数值溢出, 暂时算作类型错误
+                }
+            }
+        } else if (value instanceof Integer) {
+            return ((Integer) value).longValue() > min;
+        } else if (value instanceof Long) {
+            return ((Long) value) > min;
+        }
+
+        return false;
+    }
+
+    protected static boolean checkIfLongGe(Object value, Long min) {
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    return val >= min;
+                } catch (Exception e) {
+                    // 实际上是数值溢出, 暂时算作类型错误
+                }
+            }
+        } else if (value instanceof Integer) {
+            return ((Integer) value).longValue() >= min;
+        } else if (value instanceof Long) {
+            return ((Long) value) >= min;
+        }
+
+        return false;
+    }
+
+    protected static boolean checkIfLongLt(Object value, Long max) {
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    return val < max;
+                } catch (Exception e) {
+                    // 实际上是数值溢出, 暂时算作类型错误
+                }
+            }
+        } else if (value instanceof Integer) {
+            return ((Integer) value).longValue() < max;
+        } else if (value instanceof Long) {
+            return ((Long) value) < max;
+        }
+
+        return false;
+    }
+
+    protected static boolean checkIfLongLe(Object value, Long max) {
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    long val = Long.parseLong((String) value);
+                    return val <= max;
+                } catch (Exception e) {
+                    // 实际上是数值溢出, 暂时算作类型错误
+                }
+            }
+        } else if (value instanceof Integer) {
+            return ((Integer) value).longValue() <= max;
+        } else if (value instanceof Long) {
+            return ((Long) value) <= max;
+        }
+
+        return false;
+    }
+
+    protected static boolean checkIfLongIn(Object value, List<Long> values) {
+        Long v;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    v = Long.parseLong((String) value);
+                } catch (Exception e) {
+                    return false; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                return false;
+        } else if (value instanceof Integer) {
+            v = ((Integer) value).longValue();
+        } else if (value instanceof Long) {
+            v = (Long) value;
+        } else
+            return false;
+
+        return values.indexOf(v) >= 0;
+    }
+
+    protected static boolean checkIfLongNotIn(Object value, List<Long> values) {
+        Long v;
+        if (value instanceof String) {
+            if (ValidationUtils.isIntString((String) value)) {
+                try {
+                    v = Long.parseLong((String) value);
+                } catch (Exception e) {
+                    return true; // 实际上是数值溢出, 暂时算作类型错误
+                }
+            } else
+                return true;
+        } else if (value instanceof Integer) {
+            v = ((Integer) value).longValue();
+        } else if (value instanceof Long) {
+            v = (Long) value;
+        } else
+            return true;
+
+        return values.indexOf(v) == -1;
+    }
+
     protected static boolean checkIfStrEq(Object value, String string) {
         return string.equals(value);
     }
@@ -4129,6 +5052,21 @@ public class Validation {
         static final int IntGeLt = 110;
         static final int IntIn = 111;
         static final int IntNotIn = 112;
+
+        // 64位整型
+        static final int Long = 150;
+        static final int LongEq = 151;
+        static final int LongNe = 152;
+        static final int LongGt = 153;
+        static final int LongGe = 154;
+        static final int LongLt = 155;
+        static final int LongLe = 156;
+        static final int LongGtLt = 157;
+        static final int LongGeLe = 158;
+        static final int LongGtLe = 159;
+        static final int LongGeLt = 160;
+        static final int LongIn = 161;
+        static final int LongNotIn = 162;
 
         // Float
         static final int Float = 200;
@@ -4232,14 +5170,22 @@ public class Validation {
         static final int IfIntLe = 911;
         static final int IfIntIn = 912;
         static final int IfIntNotIn = 913;
-        static final int IfStrEq = 914;
-        static final int IfStrNe = 915;
-        static final int IfStrGt = 916;
-        static final int IfStrLt = 917;
-        static final int IfStrGe = 918;
-        static final int IfStrLe = 919;
-        static final int IfStrIn = 920;
-        static final int IfStrNotIn = 921;
+        static final int IfLongEq = 914;
+        static final int IfLongNe = 915;
+        static final int IfLongGt = 916;
+        static final int IfLongLt = 917;
+        static final int IfLongGe = 918;
+        static final int IfLongLe = 919;
+        static final int IfLongIn = 920;
+        static final int IfLongNotIn = 921;
+        static final int IfStrEq = 922;
+        static final int IfStrNe = 923;
+        static final int IfStrGt = 924;
+        static final int IfStrLt = 925;
+        static final int IfStrGe = 926;
+        static final int IfStrLe = 927;
+        static final int IfStrIn = 928;
+        static final int IfStrNotIn = 929;
 
         static int fromNameOrThrow(String validatorName) throws ValidationException {
             Integer type = validatorNameToType.get(validatorName);
@@ -4270,6 +5216,21 @@ public class Validation {
             put("IntGeLt", IntGeLt);
             put("IntIn", IntIn);
             put("IntNotIn", IntNotIn);
+
+            // 64位整型
+            put("Long", Long);
+            put("LongEq", LongEq);
+            put("LongNe", LongNe);
+            put("LongGt", LongGt);
+            put("LongGe", LongGe);
+            put("LongLt", LongLt);
+            put("LongLe", LongLe);
+            put("LongGtLt", LongGtLt);
+            put("LongGeLe", LongGeLe);
+            put("LongGtLe", LongGtLe);
+            put("LongGeLt", LongGeLt);
+            put("LongIn", LongIn);
+            put("LongNotIn", LongNotIn);
 
             // Float
             put("Float", Float);
@@ -4373,6 +5334,14 @@ public class Validation {
             put("IfIntLe", IfIntLe);
             put("IfIntIn", IfIntIn);
             put("IfIntNotIn", IfIntNotIn);
+            put("IfLongEq", IfLongEq);
+            put("IfLongNe", IfLongNe);
+            put("IfLongGt", IfLongGt);
+            put("IfLongLt", IfLongLt);
+            put("IfLongGe", IfLongGe);
+            put("IfLongLe", IfLongLe);
+            put("IfLongIn", IfLongIn);
+            put("IfLongNotIn", IfLongNotIn);
             put("IfStrEq", IfStrEq);
             put("IfStrNe", IfStrNe);
             put("IfStrGt", IfStrGt);

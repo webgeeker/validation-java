@@ -483,6 +483,284 @@ public class ValidationTest
 
     }
 
+    public void testValidateLong() throws Exception {
+        HashMap<String, Object> params = new HashMap<>();
+        Object[] longVals = null;
+        Object[] notLongVals = null;
+
+        // Long
+        longVals = new Object[]{"-1", "0", "1", -1, 0, 1, -1L, 0L, 1L, 4294967296L, -4294967297L, "4294967296", "-4294967297"};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "Long", null});
+        }
+        notLongVals = new Object[]{true, 0.0, 1.0f, "0.0", "abc", "", 'a', new Byte((byte) 1), new Short((short) 1), new Long[0], new ArrayList<>(), new HashMap<String, Object>()};
+        for (Object notLongVal : notLongVals) {
+            params.put("varLong", notLongVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "Long", null});
+            }, "必须是长整数");
+        }
+
+        // LongEq
+        longVals = new Object[]{"-1", -1, -1L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "LongEq:-1", null});
+        }
+        longVals = new Object[]{"0", 0, 0L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongEq:-1", null});
+            }, "必须等于 -1");
+        }
+        notLongVals = new Object[]{true, 0.0, 1.0f, "0.0", "abc", "", 'a', new Byte((byte) 1), new Short((short) 1), new Long[0], new ArrayList<>(), new HashMap<String, Object>()};
+        for (Object notLongVal : notLongVals) {
+            params.put("varLong", notLongVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongEq:-1", null});
+            }, "必须是长整数");
+        }
+
+        // LongNe
+        longVals = new Object[]{"0", 0, 0L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "LongNe:-1", null});
+        }
+        longVals = new Object[]{"-1", -1, -1L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongNe:-1", null});
+            }, "不能等于 -1");
+        }
+        notLongVals = new Object[]{true, 0.0, 1.0f, "0.0", "abc", "", 'a', new Byte((byte) 1), new Short((short) 1), new Long[0], new ArrayList<>(), new HashMap<String, Object>()};
+        for (Object notLongVal : notLongVals) {
+            params.put("varLong", notLongVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongNe:-1", null});
+            }, "必须是长整数");
+        }
+
+        // LongGt
+        longVals = new Object[]{"1", 1, 1L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "LongGt:0", null});
+        }
+        longVals = new Object[]{"0", 0, 0L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongGt:0", null});
+            }, "必须大于 0");
+        }
+        notLongVals = new Object[]{true, 0.0, 1.0f, "0.0", "abc", "", 'a', new Byte((byte) 1), new Short((short) 1), new Long[0], new ArrayList<>(), new HashMap<String, Object>()};
+        for (Object notLongVal : notLongVals) {
+            params.put("varLong", notLongVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongGt:0", null});
+            }, "必须是长整数");
+        }
+
+        // LongGe
+        longVals = new Object[]{"1", 1, 1L, "0", 0, 0L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "LongGe:0", null});
+        }
+        longVals = new Object[]{"-1", -1, -1L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongGe:0", null});
+            }, "必须大于等于 0");
+        }
+        notLongVals = new Object[]{true, 0.0, 1.0f, "0.0", "abc", "", 'a', new Byte((byte) 1), new Short((short) 1), new Long[0], new ArrayList<>(), new HashMap<String, Object>()};
+        for (Object notLongVal : notLongVals) {
+            params.put("varLong", notLongVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongGe:0", null});
+            }, "必须是长整数");
+        }
+
+        // LongLt
+        longVals = new Object[]{"-1", -1, -1L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "LongLt:0", null});
+        }
+        longVals = new Object[]{"0", 0, 0L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongLt:0", null});
+            }, "必须小于 0");
+        }
+        notLongVals = new Object[]{true, 0.0, 1.0f, "0.0", "abc", "", 'a', new Byte((byte) 1), new Short((short) 1), new Long[0], new ArrayList<>(), new HashMap<String, Object>()};
+        for (Object notLongVal : notLongVals) {
+            params.put("varLong", notLongVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongLt:0", null});
+            }, "必须是长整数");
+        }
+
+        // LongLe
+        longVals = new Object[]{"-1", -1, -1L, "0", 0, 0L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "LongLe:0", null});
+        }
+        longVals = new Object[]{"1", 1, 1L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongLe:0", null});
+            }, "必须小于等于 0");
+        }
+        notLongVals = new Object[]{true, 0.0, 1.0f, "0.0", "abc", "", 'a', new Byte((byte) 1), new Short((short) 1), new Long[0], new ArrayList<>(), new HashMap<String, Object>()};
+        for (Object notLongVal : notLongVals) {
+            params.put("varLong", notLongVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongLe:0", null});
+            }, "必须是长整数");
+        }
+
+        // LongGeLe
+        longVals = new Object[]{"0", 0, 0L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "LongGeLe:0,0", null});
+        }
+        longVals = new Object[]{"-123", -123, -123L, "-0123", "-1", -1, -1L, "0", 0, 0L, "1", 1, 1L, "123", 123, 123L, "0123"};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "LongGeLe:-123,123", null});
+        }
+        longVals = new Object[]{"-124", -124, -124L, "124", 124, 124L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongGeLe:-123,123", null});
+            }, "必须大于等于 -123 小于等于 123");
+        }
+        notLongVals = new Object[]{true, 0.0, 1.0f, "0.0", "abc", "", 'a', new Byte((byte) 1), new Short((short) 1), new Long[0], new ArrayList<>(), new HashMap<String, Object>()};
+        for (Object notLongVal : notLongVals) {
+            params.put("varLong", notLongVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongGeLe:0,0", null});
+            }, "必须是长整数");
+        }
+
+        // LongGtLt
+        longVals = new Object[]{"-122", -122, -122L, "-0122", "-1", -1, -1L, "0", "000", 0, 0L, "1", 1, 1L, "122", 122, 122L, "0122"};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "LongGtLt:-123,123", null});
+        }
+        longVals = new Object[]{"-123", -123, -123L, "123", 123, 123L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongGtLt:-123,123", null});
+            }, "必须大于 -123 小于 123");
+        }
+        notLongVals = new Object[]{true, 0.0, 1.0f, "0.0", "abc", "", 'a', new Byte((byte) 1), new Short((short) 1), new Long[0], new ArrayList<>(), new HashMap<String, Object>()};
+        for (Object notLongVal : notLongVals) {
+            params.put("varLong", notLongVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongGtLt:-123,123", null});
+            }, "必须是长整数");
+        }
+
+        // LongGtLe
+        longVals = new Object[]{"-122", -122, -122L, "-0122", "-1", -1, -1L, "01", "0", 0, 0L, "1", 1, 1L, "123", 123, 123L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "LongGtLe:-123,123", null});
+        }
+        longVals = new Object[]{"-123", -123, -123L, "124", 124, 124L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongGtLe:-123,123", null});
+            }, "必须大于 -123 小于等于 123");
+        }
+        notLongVals = new Object[]{true, 0.0, 1.0f, "0.0", "abc", "", 'a', new Byte((byte) 1), new Short((short) 1), new Long[0], new ArrayList<>(), new HashMap<String, Object>()};
+        for (Object notLongVal : notLongVals) {
+            params.put("varLong", notLongVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongGtLe:-123,123", null});
+            }, "必须是长整数");
+        }
+
+        // LongGeLt
+        longVals = new Object[]{"-123", -123, -123L, "-0122", "-1", -1, -1L, "01", "0", 0, 0L, "1", 1, 1L, "122", 122, 122L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "LongGeLt:-123,123", null});
+        }
+        longVals = new Object[]{"-124", -124, -124L, "123", 123, 123L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongGeLt:-123,123", null});
+            }, "必须大于等于 -123 小于 123");
+        }
+        notLongVals = new Object[]{true, 0.0, 1.0f, "0.0", "abc", "", 'a', new Byte((byte) 1), new Short((short) 1), new Long[0], new ArrayList<>(), new HashMap<String, Object>()};
+        for (Object notLongVal : notLongVals) {
+            params.put("varLong", notLongVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongGeLt:-123,123", null});
+            }, "必须是长整数");
+        }
+
+        // LongIn
+        longVals = new Object[]{"1", 1, 1L, "2", "002", 2, 2L, "-3", -3, -3L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "LongIn:1,2,-3", null});
+        }
+        longVals = new Object[]{"0", 0, 0L, "123", 123, 123L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongIn:1,2,-3", null});
+            }, "只能取这些值: 1, 2, -3");
+        }
+        notLongVals = new Object[]{true, 0.0, 1.0f, "0.0", "abc", "", 'a', new Byte((byte) 1), new Short((short) 1), new Long[0], new ArrayList<>(), new HashMap<String, Object>()};
+        for (Object notLongVal : notLongVals) {
+            params.put("varLong", notLongVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongIn:1,2,-3", null});
+            }, "必须是长整数");
+        }
+
+        // LongNotIn
+        longVals = new Object[]{"0", 0, 0L, "123", 123, 123L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            Validation.validate(params, new String[]{"varLong", "LongNotIn:1,2,-3", null});
+        }
+        longVals = new Object[]{"1", 1, 1L, "2", "002", 2, 2L, "-3", -3, -3L};
+        for (Object longVal : longVals) {
+            params.put("varLong", longVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongNotIn:1,2,-3", null});
+            }, "不能取这些值: 1, 2, -3");
+        }
+        notLongVals = new Object[]{true, 0.0, 1.0f, "0.0", "abc", "", 'a', new Byte((byte) 1), new Short((short) 1), new Long[0], new ArrayList<>(), new HashMap<String, Object>()};
+        for (Object notLongVal : notLongVals) {
+            params.put("varLong", notLongVal);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"varLong", "LongNotIn:1,2,-3", null});
+            }, "必须是长整数");
+        }
+
+    }
+
     public void testValidateStr() throws Exception {
         HashMap<String, Object> params = new HashMap<>();
 
@@ -2760,6 +3038,450 @@ public class ValidationTest
             params.put("param", 0);
             _assertThrowExpectionContainErrorString(() -> {
                 Validation.validate(params, new String[]{"param", "IfIntNotIn:condition,-100,-1,0,1,100|IntEq:1", null});
+            }, "必须等于 1");
+
+        }
+
+    }
+
+    public void testValidateIfLong() throws Exception {
+        HashMap<String, Object> params = new HashMap<>();
+        Object[] longVals;
+        Object[] notLongVals;
+
+        // IfLongEq
+        longVals = new Object[]{0, -1, 1, 100, -100, 0L, -1L, 1L, 100L, -100L, "0", "-1", "1", "100", "-100", 4294967296L, -4294967297L, "4294967296", "-4294967297",};
+        for (Object longVal : longVals) {
+            long longVal2;
+            if (longVal instanceof String)
+                longVal2 = Long.parseLong((String) longVal) + 1;
+            else if (longVal instanceof Integer)
+                longVal2 = ((Integer) longVal).longValue() + 1;
+            else
+                longVal2 = ((Long) longVal) + 1;
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongEq:condition," + longVal2 + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongEq:condition," + longVal2 + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongEq:condition," + longVal + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfLongEq:condition," + longVal + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfLongEq 条件参数类型错误导致的条件不成立的情况
+        notLongVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Byte((byte) 1), new Short((short) 1), new Object[0], new long[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是长整型也不是长整型字符串
+        for (Object notLongVal : notLongVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongEq:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongEq:condition,1|IntEq:1", null});
+
+        }
+
+        // IfLongNe
+        longVals = new Object[]{0, -1, 1, 100, -100, 0L, -1L, 1L, 100L, -100L, "0", "-1", "1", "100", "-100", 4294967296L, -4294967297L, "4294967296", "-4294967297",};
+        for (Object longVal : longVals) {
+            long longVal2;
+            if (longVal instanceof String)
+                longVal2 = Long.parseLong((String) longVal) + 1;
+            else if (longVal instanceof Integer)
+                longVal2 = ((Integer) longVal).longValue() + 1;
+            else
+                longVal2 = ((Long) longVal) + 1;
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongNe:condition," + longVal + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongNe:condition," + longVal + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongNe:condition," + longVal2 + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfLongNe:condition," + longVal2 + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfLongNe 条件参数类型错误导致的条件成立的情况
+        notLongVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Byte((byte) 1), new Short((short) 1), new Object[0], new long[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是长整型也不是长整型字符串
+        for (Object notLongVal : notLongVals) {
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongNe:condition,0|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfLongNe:condition,1|IntEq:1", null});
+            }, "必须等于 1");
+        }
+
+        // IfLongGt
+        longVals = new Object[]{0, -1, 1, 100, -100, 0L, -1L, 1L, 100L, -100L, "0", "-1", "1", "100", "-100", 4294967296L, -4294967297L, "4294967296", "-4294967297",};
+        for (Object longVal : longVals) {
+            long longVal2;
+            if (longVal instanceof String)
+                longVal2 = Long.parseLong((String) longVal);
+            else if (longVal instanceof Integer)
+                longVal2 = ((Integer) longVal).longValue();
+            else
+                longVal2 = ((Long) longVal);
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongGt:condition," + (longVal2 + 1) + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongGt:condition," + (longVal2 + 1) + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongGt:condition," + (longVal2 - 1) + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfLongGt:condition," + (longVal2 - 10) + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfLongGt 条件参数类型错误导致的条件不成立的情况
+        notLongVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Byte((byte) 1), new Short((short) 1), new Object[0], new long[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是长整型也不是长整型字符串
+        for (Object notLongVal : notLongVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongGt:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongGt:condition,1|IntEq:1", null});
+
+        }
+
+        // IfLongGe
+        longVals = new Object[]{0, -1, 1, 100, -100, 0L, -1L, 1L, 100L, -100L, "0", "-1", "1", "100", "-100", 4294967296L, -4294967297L, "4294967296", "-4294967297",};
+        for (Object longVal : longVals) {
+            long longVal2;
+            if (longVal instanceof String)
+                longVal2 = Long.parseLong((String) longVal);
+            else if (longVal instanceof Integer)
+                longVal2 = ((Integer) longVal).longValue();
+            else
+                longVal2 = ((Long) longVal);
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongGe:condition," + (longVal2 + 1) + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongGe:condition," + (longVal2 + 2) + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongGe:condition," + longVal + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfLongGe:condition," + (longVal2 - 1) + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfLongGe 条件参数类型错误导致的条件不成立的情况
+        notLongVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Byte((byte) 1), new Short((short) 1), new Object[0], new long[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是长整型也不是长整型字符串
+        for (Object notLongVal : notLongVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongGe:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongGe:condition,1|IntEq:1", null});
+
+        }
+
+        // IfLongLt
+        longVals = new Object[]{0, -1, 1, 100, -100, 0L, -1L, 1L, 100L, -100L, "0", "-1", "1", "100", "-100", 4294967296L, -4294967297L, "4294967296", "-4294967297",};
+        for (Object longVal : longVals) {
+            long longVal2;
+            if (longVal instanceof String)
+                longVal2 = Long.parseLong((String) longVal);
+            else if (longVal instanceof Integer)
+                longVal2 = ((Integer) longVal).longValue();
+            else
+                longVal2 = ((Long) longVal);
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongLt:condition," + longVal + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongLt:condition," + (longVal2 - 1) + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongLt:condition," + (longVal2 + 1) + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfLongLt:condition," + (longVal2 + 10) + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfLongLt 条件参数类型错误导致的条件不成立的情况
+        notLongVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Byte((byte) 1), new Short((short) 1), new Object[0], new long[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是长整型也不是长整型字符串
+        for (Object notLongVal : notLongVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongLt:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongLt:condition,1|IntEq:1", null});
+
+        }
+
+        // IfLongLe
+        longVals = new Object[]{0, -1, 1, 100, -100, 0L, -1L, 1L, 100L, -100L, "0", "-1", "1", "100", "-100", 4294967296L, -4294967297L, "4294967296", "-4294967297",};
+        for (Object longVal : longVals) {
+            long longVal2;
+            if (longVal instanceof String)
+                longVal2 = Long.parseLong((String) longVal);
+            else if (longVal instanceof Integer)
+                longVal2 = ((Integer) longVal).longValue();
+            else
+                longVal2 = ((Long) longVal);
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongLe:condition," + (longVal2 - 1) + "|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongLe:condition," + (longVal2 - 2) + "|IntEq:1", null});
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongLe:condition," + longVal + "|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfLongLe:condition," + (longVal2 + 1) + "|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfLongLe 条件参数类型错误导致的条件不成立的情况
+        notLongVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Byte((byte) 1), new Short((short) 1), new Object[0], new long[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是长整型也不是长整型字符串
+        for (Object notLongVal : notLongVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongLe:condition,0|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongLe:condition,1|IntEq:1", null});
+
+        }
+
+        // IfLongIn 条件不成立
+        Object[] intNotInVals = new Object[]{-13, 13, 123, -123, "-13", "13", "123", "-123", 4294967297L, -4294967298L, "4294967297", "-4294967298",};
+        for (Object intNotInVal : intNotInVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intNotInVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongIn:condition,-4294967297,-100,-1,0,1,100,4294967296|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intNotInVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongIn:condition,-4294967297,-100,-1,0,1,100,4294967296|IntEq:1", null});
+        }
+        // IfLongIn 条件成立
+        longVals = new Object[]{0, -1, 1, 100, -100, "0", "-1", "1", "100", "-100", 4294967296L, -4294967297L, "4294967296", "-4294967297",};
+        for (Object longVal : longVals) {
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongIn:condition,-4294967297,-100,-1,0,1,100,4294967296|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", longVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfLongIn:condition,-4294967297,-100,-1,0,1,100,4294967296|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfLongIn 条件参数类型错误导致的条件不成立的情况
+        notLongVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Byte((byte) 1), new Short((short) 1), new Object[0], new long[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是长整型也不是长整型字符串
+        for (Object notLongVal : notLongVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongIn:condition,-4294967297,-100,-1,0,1,100,4294967296|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongIn:condition,-4294967297,-100,-1,0,1,100,4294967296|IntEq:1", null});
+
+        }
+
+        // IfLongNotIn 条件不成立
+        Object[] intInVals = new Object[]{0, -1, 1, 100, -100, "0", "-1", "1", "100", "-100", 4294967296L, -4294967297L, "4294967296", "-4294967297",};
+        for (Object intInVal : intInVals) {
+
+            //条件不成立+验证通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intInVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongNotIn:condition,-4294967297,-100,-1,0,1,100,4294967296|IntEq:1", null});
+
+            //条件不成立+验证不通过（此条检测会被忽略）
+            params.clear();
+            params.put("condition", intInVal);
+            params.put("param", 0);
+            Validation.validate(params, new String[]{"param", "IfLongNotIn:condition,-4294967297,-100,-1,0,1,100,4294967296|IntEq:1", null});
+        }
+        // IfLongNotIn 条件成立
+        intNotInVals = new Object[]{-13, 13, 123, -123, "-13", "13", "123", "-123", 4294967297L, -4294967298L, "4294967297", "-4294967298",};
+        for (Object intNotInVal : intNotInVals) {
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", intNotInVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongNotIn:condition,-4294967297,-100,-1,0,1,100,4294967296|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", intNotInVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfLongNotIn:condition,-4294967297,-100,-1,0,1,100,4294967296|IntEq:1", null});
+            }, "必须等于 1");
+        }
+        // IfLongNotIn 条件参数类型错误导致的条件不成立的情况
+        notLongVals = new Object[]{true, false, 1.0, 0.0, "1.0", "0.0", "", "abc", new Byte((byte) 1), new Short((short) 1), new Object[0], new long[]{1, 2, 3}, new HashMap<String, Object>()}; // 不是长整型也不是长整型字符串
+        for (Object notLongVal : notLongVals) {
+
+            //条件成立+验证通过
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 1);
+            Validation.validate(params, new String[]{"param", "IfLongNotIn:condition,-4294967297,-100,-1,0,1,100,4294967296|IntEq:1", null});
+
+            //条件成立+验证不通过
+            params.clear();
+            params.put("condition", notLongVal);
+            params.put("param", 0);
+            _assertThrowExpectionContainErrorString(() -> {
+                Validation.validate(params, new String[]{"param", "IfLongNotIn:condition,-4294967297,-100,-1,0,1,100,4294967296|IntEq:1", null});
             }, "必须等于 1");
 
         }

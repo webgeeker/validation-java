@@ -192,7 +192,20 @@ Validation.validate(params, new String[]{
 
 完整的整型验证器的列表参考附录 A.1 。
 
-### 4.2 验证浮点型参数
+### 4.2 验证长整型参数
+
+整型验证器全部以"Long"开头，用于验证整型数值（如`123`）、整型字符串（如`"123"`）、长整型数值（如`4294967296L`）、长整型字符串（如`"4294967296"`）。其它数据类型均不匹配。
+
+```java
+Validation.validate(params, new String[]{
+    "money", "LongGeLe:5000000000,10000000000", null,
+});
+```
+这条验证要求参数"money"是整数，并且大于等于5000000000，小于等于10000000000。
+
+完整的长整型验证器的列表参考附录 A.2 。
+
+### 4.3 验证浮点型参数
 
 浮点型验证器全部以"Float"开头，用于验证浮点型数值（如`1.0`）、浮点型字符串（如`"1.0"`）、整型数值（如`123`）或整型字符串（如`"123"`）。其它数据类型均不匹配。
 
@@ -205,9 +218,9 @@ Validation.validate(params, new String[]{
 ```
 这条验证要求参数"height"是浮点数，并且大于等于0，小于等于100.0。
 
-完整的浮点型验证器的列表参考附录 A.2 。
+完整的浮点型验证器的列表参考附录 A.3 。
 
-### 4.3 验证bool型参数
+### 4.4 验证bool型参数
 
 bool型验证器：
 * Bool: 合法的取值为: `true`, `false`, `"true"`, `"false"`（字符串忽略大小写）。
@@ -224,9 +237,9 @@ Validation.validate(params, new String[]{
 });
 ```
 
-完整的bool型验证器的列表参考附录 A.3 。
+完整的bool型验证器的列表参考附录 A.4 。
 
-### 4.4 验证字符串型参数
+### 4.5 验证字符串型参数
 
 字符串型验证器不全以"Str"开头。只接收字符串型数据，其它数据类型均不匹配。
 
@@ -274,13 +287,13 @@ string.matches("^abc/$")
 ```
 而`string.matches("^(yes|no)$")`对应的验证器为`"Regexp:/^(yes|no)$/"`
 
-完整的字符串型验证器的列表参考附录 A.4 。
+完整的字符串型验证器的列表参考附录 A.5 。
 
-### 4.5 验证数组型、Map型、文件型、日期时间型参数
+### 4.6 验证数组型、Map型、文件型、日期时间型参数
 
-参考附录A.5-A.8
+参考附录A.6-A.9
 
-### 4.6 验证器串联（与）
+### 4.7 验证器串联（与）
 
 一条规则中可以有多个验证器前后串联，它们之间是“AND”的关系，如：
 ```java
@@ -291,7 +304,7 @@ Validation.validate(params, new String[]{
 这个验证要求参数"file"是一个图像文件，并且文件大小不超过10m
 
 
-### 4.7 Required 验证器
+### 4.8 Required 验证器
 
 * Required验证器要求参数必须存在，且其值不能为`null`（这个是PHP的`null`值，而不是字符串"null"）（参数值为`null`等价于参数不存在）。
 * 如果多个验证器串联，Required验证器必须在其它验证器前面。
@@ -306,7 +319,7 @@ Validation.validate(params, new String[]{
 ```
 该验证要求参数"size"是必需的，且只能是字符串的"small", "middle"或者"large"。
 
-### 4.8 忽略所有 Required 验证器
+### 4.9 忽略所有 Required 验证器
 
 比如当创建一个用户时，要求姓名、性别、年龄全部都要提供；但是当更新用户信息时，不需要提供全部信息，提供哪个信息就更新哪个信息。
 
@@ -331,7 +344,7 @@ Validation.validate(userInfo, validations, true); // 更新用户信息时的验
 
 这样我们就只需要写一份验证规则，就可以同时用于创建用户和更新用户信息这两个接口。
 
-### 4.9 嵌套参数的验证
+### 4.10 嵌套参数的验证
 
 下面这个例子展示了包含数组和Map的嵌套的参数的验证：
 ```java
@@ -360,7 +373,7 @@ HashMap<String, Object> params = new HashMap<String, Object>() {{
 Validation.validate(params, validations);
 ```
 
-### 4.10 条件判断型验证器
+### 4.11 条件判断型验证器
 
 条件判断型验证器都以"If"开头。
 
@@ -388,9 +401,9 @@ String[] validations = new String[]{
 "IfXxx:"的后面应该是另一个参数的名称，而不是当前参数，这一点一定要注意。  
 比如上面的例子中，是根据参数"sex"的取值不同，对参数"height"应用了不同的验证规则，"IfXxx:"后面跟的是"sex"。
 
-完整的条件判断型验证器的列表参考附录 A.9 。
+完整的条件判断型验证器的列表参考附录 A.10 。
 
-### 4.11 验证规则并联（或）
+### 4.12 验证规则并联（或）
 
 多条验证规则可以并联，它们之间是“或”的关系，如
 ```java
@@ -410,7 +423,7 @@ String[] validations = new String[]{
 
 这些规则如果要完全理清并不是一件容易的事，所以不建议使用验证规则并联，也尽量不要设计需要这种验证方式的参数。
 
-### 4.12 关于特殊值`null`, `""`，`0`，`false`的问题
+### 4.13 关于特殊值`null`, `""`，`0`，`false`的问题
 
 这些特殊的值是不等价的，它们是不同的数据类型（需要用不同的验证器去验证）：
 * `""`是字符串。
@@ -443,7 +456,7 @@ params = new HashMap<String, Object>(){{
 
 如果非要从客户端传递`null`值，那只能把所有参数转换为json格式作为Body以POST方式发送请求，并且`Content-Type`要设置为`application/json`；然后服务端要手动把json格式的body解析出来，因为servlet的 ServletRequest 不会解析 json 格式的body。
 
-### 4.13 关于基本数据类型与字符串的关系
+### 4.14 关于基本数据类型与字符串的关系
 
 对于以下url地址
 ```
@@ -470,7 +483,7 @@ params = new HashMap<String, Object>(){{
 * bool型`true`和字符串`"true"`均可以通过验证器BoolXxx的验证；
 * 但是`null`值和字符串`"null"`永远不等价，字符串`"null"`就只是普通的字符串。
 
-### 4.14 自定义错误信息输出文本
+### 4.15 自定义错误信息输出文本
 
 如果参数验证不通过，`Validation.validate()`方法会抛出异常，这个异常会包含验证不通过的错误信息描述的文本。
 
@@ -496,7 +509,7 @@ Validation.validate(params, new String[]{
 ```
 参考附录A.10获取更详细的信息
 
-### 4.15 国际化
+### 4.16 国际化
 
 尚未实现
 
@@ -522,7 +535,27 @@ Validation.validate(params, new String[]{
 | IntIn | IntIn:2,3,5,7,11 | “{{param}}”只能取这些值: {{valueList}} |
 | IntNotIn | IntNotIn:2,3,5,7,11 | “{{param}}”不能取这些值: {{valueList}} |
 
-### A.2 浮点型
+### A.2 长整型
+
+整型验证器全部以"Long"开头。
+
+| 整型验证器 | 示例 | 说明 |
+| :------| :------ | :------ |
+| Long | Long | “{{param}}”必须是长整数 |
+| LongEq | LongEq:100 | “{{param}}”必须等于 {{value}} |
+| LongNe | LongNe:100 | “{{param}}”不能等于 {{value}} |
+| LongGt | LongGt:100 | “{{param}}”必须大于 {{min}} |
+| LongGe | LongGe:100 | “{{param}}”必须大于等于 {{min}} |
+| LongLt | LongLt:100 | “{{param}}”必须小于 {{max}} |
+| LongLe | LongLe:100 | “{{param}}”必须小于等于 {{max}} |
+| LongGtLt | LongGtLt:1,100 | “{{param}}”必须大于 {{min}} 小于 {{max}} |
+| LongGeLe | LongGeLe:1,100 | “{{param}}”必须大于等于 {{min}} 小于等于 {{max}} |
+| LongGtLe | LongGtLe:1,100 | “{{param}}”必须大于 {{min}} 小于等于 {{max}} |
+| LongGeLt | LongGeLt:1,100 | “{{param}}”必须大于等于 {{min}} 小于 {{max}} |
+| LongIn | LongIn:2,3,5,7,11 | “{{param}}”只能取这些值: {{valueList}} |
+| LongNotIn | LongNotIn:2,3,5,7,11 | “{{param}}”不能取这些值: {{valueList}} |
+
+### A.3 浮点型
 
 内部一律使用双精度浮点数来处理
 
@@ -538,7 +571,7 @@ Validation.validate(params, new String[]{
 | FloatGtLe | FloatGtLe:0,1.0 | “{{param}}”必须大于 {{min}} 小于等于 {{max}} |
 | FloatGeLt | FloatGeLt:0,1.0 | “{{param}}”必须大于等于 {{min}} 小于 {{max}} |
 
-### A.3 bool型
+### A.4 bool型
 
 | bool型验证器 | 示例 | 说明 |
 | :------| :------ | :------ |
@@ -549,7 +582,7 @@ Validation.validate(params, new String[]{
 | BoolSmartTrue | BoolSmartTrue | 合法的取值为: `true`, `"true"`, `1`, `"1"`, `"yes"`, `"y"`（忽略大小写） |
 | BoolSmartFalse | BoolSmartFalse | 合法的取值为: `false`, `"false"`, `0`, `"0"`, `"no"`, `"n"`（忽略大小写） |
 
-### A.4 字符串型
+### A.5 字符串型
 
 | 字符串型验证器 | 示例 | 说明 |
 | :------| :------ | :------ |
@@ -579,7 +612,7 @@ Validation.validate(params, new String[]{
 | Mac | Mac | “{{param}}”必须是合法的MAC地址 |
 | Regexp | Regexp:/^abc$/ | Perl正则表达式匹配 |
 
-### A.5 数组型
+### A.6 数组型
 
 | 数组型验证器 | 示例 | 说明 |
 | :------| :------ | :------ |
@@ -594,13 +627,13 @@ Validation.validate(params, new String[]{
 | ArrLenLe | ArrLenLe:9 | “{{param}}”长度必须小于等于 {{max}} |
 | ArrLenGeLe | ArrLenGeLe:1,9 | “{{param}}”组度必须在 {{min}} ~ {{max}} 之间 |
 
-### A.6 Map型
+### A.7 Map型
 
 | Map型验证器 | 示例 | 说明 |
 | :------| :------ | :------ |
 | Map | Map | “{{param}}”必须是 Map<String, Object> |
 
-### A.7 文件型
+### A.8 文件型
 
 *尚未实现*
 
@@ -614,7 +647,7 @@ Validation.validate(params, new String[]{
 | FileAudio | FileAudio | “{{param}}”必须是音频文件 |
 | FileMimes | FileMimes:mpeg,jpeg,png | “{{param}}”必须是这些MIME类型的文件:{{mimes}} |
 
-### A.8 日期和时间型
+### A.9 日期和时间型
 
 | 日期和时间型验证器 | 示例 | 说明 |
 | :------| :------ | :------ |
@@ -627,7 +660,7 @@ Validation.validate(params, new String[]{
 | DateTimeTo | DateTimeTo:2017-04-13 12:00:00 | “{{param}}”必须早于 {{to}} |
 | DateTimeFromTo | DateTimeFromTo:2017-04-13 12:00:00,2017-04-13 12:00:00 | “{{param}}”必须在 {{from}} ~ {{to}} 之间 |
 
-### A.9 条件判断型
+### A.10 条件判断型
 
 在一条验证规则中，条件验证器必须在其它验证器前面，多个条件验证器可以串联。
 
@@ -644,11 +677,19 @@ Validation.validate(params, new String[]{
 | IfIntEq|  IfIntEq:var,1 |  if (var == 1) |
 | IfIntNe|  IfIntNe:var,2 |  if (var != 2). 特别要注意的是如果条件参数var的数据类型不匹配, 那么If条件是成立的; 而其它几个IfIntXx当条件参数var的数据类型不匹配时, If条件不成立 |
 | IfIntGt|  IfIntGt:var,0 |  if (var > 0) |
-| IfIntLt|  IfIntLt:var,1 |  if (var < 0) |
+| IfIntLt|  IfIntLt:var,1 |  if (var < 1) |
 | IfIntGe|  IfIntGe:var,6 |  if (var >= 6) |
 | IfIntLe|  IfIntLe:var,8 |  if (var <= 8) |
 | IfIntIn|  IfIntIn:var,2,3,5,7 |  如果var的值等于2,3,5,7中的某一个 |
 | IfIntNotIn|  IfIntNotIn:var,2,3,5,7 |  如果var的值不等于2,3,5,7中的任何一个 |
+| IfLongEq|  IfLongEq:var,1 |  if (var == 1L) |
+| IfLongNe|  IfLongNe:var,2 |  if (var != 2L). 特别要注意的是如果条件参数var的数据类型不匹配, 那么If条件是成立的; 而其它几个IfLongXx当条件参数var的数据类型不匹配时, If条件不成立 |
+| IfLongGt|  IfLongGt:var,0 |  if (var > 0L) |
+| IfLongLt|  IfLongLt:var,1 |  if (var < 1L) |
+| IfLongGe|  IfLongGe:var,6 |  if (var >= 6L) |
+| IfLongLe|  IfLongLe:var,8 |  if (var <= 8L) |
+| IfLongIn|  IfLongIn:var,2,3,5,7 |  如果var的值等于2L,3L,5L,7L中的某一个 |
+| IfLongNotIn|  IfLongNotIn:var,2,3,5,7 |  如果var的值不等于2L,3L,5L,7L中的任何一个 |
 | IfStrEq|  IfStrEq:var,waiting |  if ("waiting".equals(var)) |
 | IfStrNe|  IfStrNe:var,editing |  if (!"editing".equals(var)). 特别要注意的是如果条件参数var的数据类型不匹配, 那么If条件是成立的; 而其它几个IfStrXx当条件参数var的数据类型不匹配时, If条件不成立 |
 | IfStrGt|  IfStrGt:var,a |  if (var.compareTo("a") > 0) |
@@ -658,7 +699,7 @@ Validation.validate(params, new String[]{
 | IfStrIn|  IfStrIn:var,normal,warning,error |  如果var的值等于"normal", "warning", "error"中的某一个 |
 | IfStrNotIn|  IfStrNotIn:var,warning,error |  如果var的值不等于"normal", "warning", "error"中的任何一个 |
 
-### A.10 其它验证器
+### A.11 其它验证器
 
 | 其它验证器 | 示例 | 说明 |
 | :------| :------ | :------ |

@@ -4,7 +4,7 @@
     <groupId>com.webgeeker</groupId>
     <artifactId>validation</artifactId>
     <packaging>jar</packaging>
-    <version>0.1.5</version>
+    <version>0.2.0</version>
     <name>validation</name>
     <url>http://maven.apache.org</url>
 
