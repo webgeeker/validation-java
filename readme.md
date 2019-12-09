@@ -124,7 +124,7 @@ Validation.validate(params, validations);
 <dependency>
     <groupId>com.webgeeker</groupId>
     <artifactId>validation</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
