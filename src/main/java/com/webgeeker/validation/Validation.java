@@ -1490,7 +1490,7 @@ public class Validation {
         put("DateFrom", "“{{param}}”不得早于 {{from}}");
         put("DateTo", "“{{param}}”不得晚于 {{to}}");
         put("DateFromTo", "“{{param}}”必须在 {{from}} ~ {{to}} 之间");
-        put("DateTime", "“{{param}}”必须符合日期时间格式YYYY-MM-DD HH:mm:ss");
+        put("DateTime", "“{{param}}”必须是合法的日期时间，格式为：YYYY-MM-DD HH:mm:ss");
         put("DateTimeFrom", "“{{param}}”不得早于 {{from}}");
         put("DateTimeTo", "“{{param}}”必须早于 {{to}}");
         put("DateTimeFromTo", "“{{param}}”必须在 {{from}} ~ {{to}} 之间");

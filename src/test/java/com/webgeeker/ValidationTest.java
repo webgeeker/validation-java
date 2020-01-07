@@ -1940,12 +1940,12 @@ public class ValidationTest
             params.put("datetime", dateVal);
             Validation.validate(params, new String[]{"datetime", "DateTime", null});
         }
-        notDateVals = new Object[]{"2017-06-01 12:00:aa", "2017-06-01 12:00", "2017-06-01 12/00/00", "17-06-01 12:00:00", "2017-06-01", "17-6-1", "2017 6 1", "2017/6/1", "2017-06", true, 1.0, "345", new String[0]};
+        notDateVals = new Object[]{"2017-06-01 12:00:aa", "2017-06-01 12:00", "2017-06-01 12/00/00", "17-06-01 12:00:00", "2017-06-01", "17-6-1", "2017 6 1", "2017/6/1", "2017-06", "2017-06-01 12:80:80", "2017-06-31 12:00:00", true, 1.0, "345", new String[0]};
         for (Object notDateVal : notDateVals) {
             _assertThrowExpectionContainErrorString(() -> {
                 params.put("datetime", notDateVal);
                 Validation.validate(params, new String[]{"datetime", "DateTime", null});
-            }, "必须符合日期时间格式YYYY-MM-DD HH:mm:ss");
+            }, "必须是合法的日期时间，格式为：YYYY-MM-DD HH:mm:ss");
         }
 
         // DateTimeFrom
@@ -1966,7 +1966,7 @@ public class ValidationTest
             _assertThrowExpectionContainErrorString(() -> {
                 params.put("datetime", notDateVal);
                 Validation.validate(params, new String[]{"datetime", "DateTimeFrom:2017-06-15 12:00:00", null});
-            }, "必须符合日期时间格式YYYY-MM-DD HH:mm:ss");
+            }, "必须是合法的日期时间，格式为：YYYY-MM-DD HH:mm:ss");
         }
         _assertThrowExpectionContainErrorString(() -> {
             params.put("datetime", "2017-06-15 12:00:00");
@@ -1991,7 +1991,7 @@ public class ValidationTest
             _assertThrowExpectionContainErrorString(() -> {
                 params.put("datetime", notDateVal);
                 Validation.validate(params, new String[]{"datetime", "DateTimeTo:2017-06-15 12:00:00", null});
-            }, "必须符合日期时间格式YYYY-MM-DD HH:mm:ss");
+            }, "必须是合法的日期时间，格式为：YYYY-MM-DD HH:mm:ss");
         }
         _assertThrowExpectionContainErrorString(() -> {
             params.put("datetime", "2017-06-15 12:00:00");
@@ -2016,7 +2016,7 @@ public class ValidationTest
             _assertThrowExpectionContainErrorString(() -> {
                 params.put("datetime", notDateVal);
                 Validation.validate(params, new String[]{"datetime", "DateTimeFromTo:2017-06-15 12:00:00,2017-06-15 13:00:00", null});
-            }, "必须符合日期时间格式YYYY-MM-DD HH:mm:ss");
+            }, "必须是合法的日期时间，格式为：YYYY-MM-DD HH:mm:ss");
         }
         _assertThrowExpectionContainErrorString(() -> {
             params.put("datetime", "2017-06-15 12:00:00");
