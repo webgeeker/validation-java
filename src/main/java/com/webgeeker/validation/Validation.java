@@ -1484,7 +1484,7 @@ public class Validation {
         put("FileMimes", "“{{param}}”必须是这些MIME类型的文件:{{mimes}}");
 
         // Date & Time
-        put("Date", "“{{param}}”必须符合日期格式YYYY-MM-DD");
+        put("Date", "“{{param}}”必须是合法的日期，格式为：YYYY-MM-DD");
         put("DateFrom", "“{{param}}”不得早于 {{from}}");
         put("DateTo", "“{{param}}”不得晚于 {{to}}");
         put("DateFromTo", "“{{param}}”必须在 {{from}} ~ {{to}} 之间");
@@ -1854,6 +1854,7 @@ public class Validation {
         SimpleDateFormat fmt = localDateFormatter.get();
         if (fmt == null) {
             fmt = new SimpleDateFormat("yyyy-MM-dd");
+            fmt.setLenient(false);
             localDateFormatter.set(fmt);
         }
         try {
@@ -1875,6 +1876,7 @@ public class Validation {
         SimpleDateFormat fmt = localDateTimeFormatter.get();
         if (fmt == null) {
             fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            fmt.setLenient(false);
             localDateTimeFormatter.set(fmt);
         }
         try {
@@ -4134,6 +4136,7 @@ public class Validation {
                 SimpleDateFormat fmt = localDateFormatter.get();
                 if (fmt == null) {
                     fmt = new SimpleDateFormat("yyyy-MM-dd");
+                    fmt.setLenient(false);
                     localDateFormatter.set(fmt);
                 }
 
@@ -4141,6 +4144,7 @@ public class Validation {
                     fmt.parse(dateString);
                     return dateString;
                 } catch (Exception e) {
+                    String m = e.getMessage();
                     //
                 }
             }
@@ -4166,6 +4170,7 @@ public class Validation {
                 SimpleDateFormat fmt = localDateFormatter.get();
                 if (fmt == null) {
                     fmt = new SimpleDateFormat("yyyy-MM-dd");
+                    fmt.setLenient(false);
                     localDateFormatter.set(fmt);
                 }
 
@@ -4191,6 +4196,7 @@ public class Validation {
         SimpleDateFormat fmt = localDateFormatter.get();
         if (fmt == null) {
             fmt = new SimpleDateFormat("yyyy-MM-dd");
+            fmt.setLenient(false);
             localDateFormatter.set(fmt);
         }
         String fromDateString = fmt.format(new Date(fromTimestamp * 1000L));
@@ -4211,6 +4217,7 @@ public class Validation {
                 SimpleDateFormat fmt = localDateFormatter.get();
                 if (fmt == null) {
                     fmt = new SimpleDateFormat("yyyy-MM-dd");
+                    fmt.setLenient(false);
                     localDateFormatter.set(fmt);
                 }
 
@@ -4236,6 +4243,7 @@ public class Validation {
         SimpleDateFormat fmt = localDateFormatter.get();
         if (fmt == null) {
             fmt = new SimpleDateFormat("yyyy-MM-dd");
+            fmt.setLenient(false);
             localDateFormatter.set(fmt);
         }
         String toDateString = fmt.format(new Date(toTimestamp * 1000L));
@@ -4256,6 +4264,7 @@ public class Validation {
                 SimpleDateFormat fmt = localDateFormatter.get();
                 if (fmt == null) {
                     fmt = new SimpleDateFormat("yyyy-MM-dd");
+                    fmt.setLenient(false);
                     localDateFormatter.set(fmt);
                 }
 
@@ -4281,6 +4290,7 @@ public class Validation {
         SimpleDateFormat fmt = localDateFormatter.get();
         if (fmt == null) {
             fmt = new SimpleDateFormat("yyyy-MM-dd");
+            fmt.setLenient(false);
             localDateFormatter.set(fmt);
         }
         String fromDateString = fmt.format(new Date(fromTimestamp * 1000L));
@@ -4299,6 +4309,7 @@ public class Validation {
                 SimpleDateFormat fmt = localDateTimeFormatter.get();
                 if (fmt == null) {
                     fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    fmt.setLenient(false);
                     localDateTimeFormatter.set(fmt);
                 }
 
@@ -4331,6 +4342,7 @@ public class Validation {
                 SimpleDateFormat fmt = localDateTimeFormatter.get();
                 if (fmt == null) {
                     fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    fmt.setLenient(false);
                     localDateTimeFormatter.set(fmt);
                 }
 
@@ -4356,6 +4368,7 @@ public class Validation {
         SimpleDateFormat fmt = localDateTimeFormatter.get();
         if (fmt == null) {
             fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            fmt.setLenient(false);
             localDateTimeFormatter.set(fmt);
         }
         String fromDateString = fmt.format(new Date(fromTimestamp * 1000L));
@@ -4376,6 +4389,7 @@ public class Validation {
                 SimpleDateFormat fmt = localDateTimeFormatter.get();
                 if (fmt == null) {
                     fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    fmt.setLenient(false);
                     localDateTimeFormatter.set(fmt);
                 }
 
@@ -4401,6 +4415,7 @@ public class Validation {
         SimpleDateFormat fmt = localDateTimeFormatter.get();
         if (fmt == null) {
             fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            fmt.setLenient(false);
             localDateTimeFormatter.set(fmt);
         }
         String toDateString = fmt.format(new Date(toTimestamp * 1000L));
@@ -4421,6 +4436,7 @@ public class Validation {
                 SimpleDateFormat fmt = localDateTimeFormatter.get();
                 if (fmt == null) {
                     fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    fmt.setLenient(false);
                     localDateTimeFormatter.set(fmt);
                 }
 
@@ -4446,6 +4462,7 @@ public class Validation {
         SimpleDateFormat fmt = localDateTimeFormatter.get();
         if (fmt == null) {
             fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            fmt.setLenient(false);
             localDateTimeFormatter.set(fmt);
         }
         String fromDateString = fmt.format(new Date(fromTimestamp * 1000L));

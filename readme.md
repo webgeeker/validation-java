@@ -651,7 +651,7 @@ Validation.validate(params, new String[]{
 
 | 日期和时间型验证器 | 示例 | 说明 |
 | :------| :------ | :------ |
-| Date | Date | “{{param}}”必须符合日期格式YYYY-MM-DD |
+| Date | Date | “{{param}}”必须是合法的日期，格式为：YYYY-MM-DD |
 | DateFrom | DateFrom:2017-04-13 | “{{param}}”不得早于 {{from}} |
 | DateTo | DateTo:2017-04-13 | “{{param}}”不得晚于 {{to}} |
 | DateFromTo | DateFromTo:2017-04-13,2017-04-13 | “{{param}}”必须在 {{from}} ~ {{to}} 之间 |

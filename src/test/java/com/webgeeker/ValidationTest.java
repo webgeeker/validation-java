@@ -1844,12 +1844,12 @@ public class ValidationTest
             params.put("date", dateVal);
             Validation.validate(params, new String[]{"date", "Date", null});
         }
-        notDateVals = new Object[]{"17-6-1", "2017 6 1", "2017/6/1", "2017-06", true, 1.0, "345", new String[0]};
+        notDateVals = new Object[]{"17-6-1", "2017 6 1", "2017/6/1", "2017-06", "2017-06-31", true, 1.0, "345", new String[0]};
         for (Object notDateVal : notDateVals) {
             _assertThrowExpectionContainErrorString(() -> {
                 params.put("date", notDateVal);
                 Validation.validate(params, new String[]{"date", "Date", null});
-            }, "必须符合日期格式YYYY-MM-DD");
+            }, "必须是合法的日期，格式为：YYYY-MM-DD");
         }
 
         // DateFrom
@@ -1870,7 +1870,7 @@ public class ValidationTest
             _assertThrowExpectionContainErrorString(() -> {
                 params.put("date", notDateVal);
                 Validation.validate(params, new String[]{"date", "DateFrom:2017-06-15", null});
-            }, "必须符合日期格式YYYY-MM-DD");
+            }, "必须是合法的日期，格式为：YYYY-MM-DD");
         }
         _assertThrowExpectionContainErrorString(() -> {
             params.put("date", "2017-06-15");
@@ -1895,7 +1895,7 @@ public class ValidationTest
             _assertThrowExpectionContainErrorString(() -> {
                 params.put("date", notDateVal);
                 Validation.validate(params, new String[]{"date", "DateTo:2017-06-15", null});
-            }, "必须符合日期格式YYYY-MM-DD");
+            }, "必须是合法的日期，格式为：YYYY-MM-DD");
         }
         _assertThrowExpectionContainErrorString(() -> {
             params.put("date", "2017-06-15");
@@ -1920,7 +1920,7 @@ public class ValidationTest
             _assertThrowExpectionContainErrorString(() -> {
                 params.put("date", notDateVal);
                 Validation.validate(params, new String[]{"date", "DateFromTo:2017-06-10,2017-06-20", null});
-            }, "必须符合日期格式YYYY-MM-DD");
+            }, "必须是合法的日期，格式为：YYYY-MM-DD");
         }
         _assertThrowExpectionContainErrorString(() -> {
             params.put("date", "2017-06-15");
