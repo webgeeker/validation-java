@@ -497,7 +497,8 @@ public class Validation {
                 for (; i < countOfIfs; i++) {
                     Object[] validatorUnit = validatorUnits.get(i);
                     Integer ifValidatorType = (Integer) validatorUnit[0];
-                    String varKeyPath = (String) validatorUnit[1]; // 条件参数的路径
+                    String validatorName = (String) validatorUnit[1];
+                    String varKeyPath = (String) validatorUnit[2]; // 条件参数的路径
 
                     Object ifParamValue;
                     if (varKeyPath.startsWith(".")) { // 以.开头, 是相对路径
@@ -550,79 +551,79 @@ public class Validation {
                             ifResult = checkIfNotExist(ifParamValue);
                             break;
                         case Type.IfIntEq:
-                            ifResult = checkIfIntEq(ifParamValue, (Integer) validatorUnit[2]);
+                            ifResult = checkIfIntEq(ifParamValue, (Integer) validatorUnit[3]);
                             break;
                         case Type.IfIntNe:
-                            ifResult = checkIfIntNe(ifParamValue, (Integer) validatorUnit[2]);
+                            ifResult = checkIfIntNe(ifParamValue, (Integer) validatorUnit[3]);
                             break;
                         case Type.IfIntGt:
-                            ifResult = checkIfIntGt(ifParamValue, (Integer) validatorUnit[2]);
+                            ifResult = checkIfIntGt(ifParamValue, (Integer) validatorUnit[3]);
                             break;
                         case Type.IfIntGe:
-                            ifResult = checkIfIntGe(ifParamValue, (Integer) validatorUnit[2]);
+                            ifResult = checkIfIntGe(ifParamValue, (Integer) validatorUnit[3]);
                             break;
                         case Type.IfIntLt:
-                            ifResult = checkIfIntLt(ifParamValue, (Integer) validatorUnit[2]);
+                            ifResult = checkIfIntLt(ifParamValue, (Integer) validatorUnit[3]);
                             break;
                         case Type.IfIntLe:
-                            ifResult = checkIfIntLe(ifParamValue, (Integer) validatorUnit[2]);
+                            ifResult = checkIfIntLe(ifParamValue, (Integer) validatorUnit[3]);
                             break;
                         case Type.IfIntIn:
-                            ifResult = checkIfIntIn(ifParamValue, (List<Integer>) validatorUnit[2]);
+                            ifResult = checkIfIntIn(ifParamValue, (List<Integer>) validatorUnit[3]);
                             break;
                         case Type.IfIntNotIn:
-                            ifResult = checkIfIntNotIn(ifParamValue, (List<Integer>) validatorUnit[2]);
+                            ifResult = checkIfIntNotIn(ifParamValue, (List<Integer>) validatorUnit[3]);
                             break;
                         case Type.IfLongEq:
-                            ifResult = checkIfLongEq(ifParamValue, (Long) validatorUnit[2]);
+                            ifResult = checkIfLongEq(ifParamValue, (Long) validatorUnit[3]);
                             break;
                         case Type.IfLongNe:
-                            ifResult = checkIfLongNe(ifParamValue, (Long) validatorUnit[2]);
+                            ifResult = checkIfLongNe(ifParamValue, (Long) validatorUnit[3]);
                             break;
                         case Type.IfLongGt:
-                            ifResult = checkIfLongGt(ifParamValue, (Long) validatorUnit[2]);
+                            ifResult = checkIfLongGt(ifParamValue, (Long) validatorUnit[3]);
                             break;
                         case Type.IfLongGe:
-                            ifResult = checkIfLongGe(ifParamValue, (Long) validatorUnit[2]);
+                            ifResult = checkIfLongGe(ifParamValue, (Long) validatorUnit[3]);
                             break;
                         case Type.IfLongLt:
-                            ifResult = checkIfLongLt(ifParamValue, (Long) validatorUnit[2]);
+                            ifResult = checkIfLongLt(ifParamValue, (Long) validatorUnit[3]);
                             break;
                         case Type.IfLongLe:
-                            ifResult = checkIfLongLe(ifParamValue, (Long) validatorUnit[2]);
+                            ifResult = checkIfLongLe(ifParamValue, (Long) validatorUnit[3]);
                             break;
                         case Type.IfLongIn:
-                            ifResult = checkIfLongIn(ifParamValue, (List<Long>) validatorUnit[2]);
+                            ifResult = checkIfLongIn(ifParamValue, (List<Long>) validatorUnit[3]);
                             break;
                         case Type.IfLongNotIn:
-                            ifResult = checkIfLongNotIn(ifParamValue, (List<Long>) validatorUnit[2]);
+                            ifResult = checkIfLongNotIn(ifParamValue, (List<Long>) validatorUnit[3]);
                             break;
                         case Type.IfStrEq:
-                            ifResult = checkIfStrEq(ifParamValue, (String) validatorUnit[2]);
+                            ifResult = checkIfStrEq(ifParamValue, (String) validatorUnit[3]);
                             break;
                         case Type.IfStrNe:
-                            ifResult = checkIfStrNe(ifParamValue, (String) validatorUnit[2]);
+                            ifResult = checkIfStrNe(ifParamValue, (String) validatorUnit[3]);
                             break;
                         case Type.IfStrGt:
-                            ifResult = checkIfStrGt(ifParamValue, (String) validatorUnit[2]);
+                            ifResult = checkIfStrGt(ifParamValue, (String) validatorUnit[3]);
                             break;
                         case Type.IfStrGe:
-                            ifResult = checkIfStrGe(ifParamValue, (String) validatorUnit[2]);
+                            ifResult = checkIfStrGe(ifParamValue, (String) validatorUnit[3]);
                             break;
                         case Type.IfStrLt:
-                            ifResult = checkIfStrLt(ifParamValue, (String) validatorUnit[2]);
+                            ifResult = checkIfStrLt(ifParamValue, (String) validatorUnit[3]);
                             break;
                         case Type.IfStrLe:
-                            ifResult = checkIfStrLe(ifParamValue, (String) validatorUnit[2]);
+                            ifResult = checkIfStrLe(ifParamValue, (String) validatorUnit[3]);
                             break;
                         case Type.IfStrIn:
-                            ifResult = checkIfStrIn(ifParamValue, (List<String>) validatorUnit[2]);
+                            ifResult = checkIfStrIn(ifParamValue, (List<String>) validatorUnit[3]);
                             break;
                         case Type.IfStrNotIn:
-                            ifResult = checkIfStrNotIn(ifParamValue, (List<String>) validatorUnit[2]);
+                            ifResult = checkIfStrNotIn(ifParamValue, (List<String>) validatorUnit[3]);
                             break;
                         default:
-                            throw new ValidationException("无法识别的条件验证器类型“" + ifValidatorType + "”"); // 不应该出现这种情况
+                            throw new ValidationException("无法识别的条件验证器\"" + validatorName + "\""); // 不应该出现这种情况
                     }
 
                     if (!ifResult) // If条件不满足
@@ -646,124 +647,125 @@ public class Validation {
                 for (i = countOfIfs; i < countOfUnits; i++) {
                     Object[] validatorUnit = validatorUnits.get(i);
                     Integer validatorType = (Integer) validatorUnit[0];
+                    String validatorName = (String) validatorUnit[1];
 
                     switch (validatorType) {
                         case Type.Int:
                             validateInt(value, validator.reason, aAlias);
                             break;
                         case Type.IntEq:
-                            validateIntEq(value, (Integer) validatorUnit[1], validator.reason, aAlias);
+                            validateIntEq(value, (Integer) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.IntNe:
-                            validateIntNe(value, (Integer) validatorUnit[1], validator.reason, aAlias);
+                            validateIntNe(value, (Integer) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.IntGt:
-                            validateIntGt(value, (Integer) validatorUnit[1], validator.reason, aAlias);
+                            validateIntGt(value, (Integer) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.IntGe:
-                            validateIntGe(value, (Integer) validatorUnit[1], validator.reason, aAlias);
+                            validateIntGe(value, (Integer) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.IntLt:
-                            validateIntLt(value, (Integer) validatorUnit[1], validator.reason, aAlias);
+                            validateIntLt(value, (Integer) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.IntLe:
-                            validateIntLe(value, (Integer) validatorUnit[1], validator.reason, aAlias);
+                            validateIntLe(value, (Integer) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.IntGtLt:
-                            validateIntGtLt(value, (Integer) validatorUnit[1], (Integer) validatorUnit[2], validator.reason, aAlias);
+                            validateIntGtLt(value, (Integer) validatorUnit[2], (Integer) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.IntGeLe:
-                            validateIntGeLe(value, (Integer) validatorUnit[1], (Integer) validatorUnit[2], validator.reason, aAlias);
+                            validateIntGeLe(value, (Integer) validatorUnit[2], (Integer) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.IntGtLe:
-                            validateIntGtLe(value, (Integer) validatorUnit[1], (Integer) validatorUnit[2], validator.reason, aAlias);
+                            validateIntGtLe(value, (Integer) validatorUnit[2], (Integer) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.IntGeLt:
-                            validateIntGeLt(value, (Integer) validatorUnit[1], (Integer) validatorUnit[2], validator.reason, aAlias);
+                            validateIntGeLt(value, (Integer) validatorUnit[2], (Integer) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.IntIn:
-                            validateIntIn(value, (Integer[]) validatorUnit[1], validator.reason, aAlias);
+                            validateIntIn(value, (Integer[]) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.IntNotIn:
-                            validateIntNotIn(value, (Integer[]) validatorUnit[1], validator.reason, aAlias);
+                            validateIntNotIn(value, (Integer[]) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.Long:
                             validateLong(value, validator.reason, aAlias);
                             break;
                         case Type.LongEq:
-                            validateLongEq(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            validateLongEq(value, (Long) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.LongNe:
-                            validateLongNe(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            validateLongNe(value, (Long) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.LongGt:
-                            validateLongGt(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            validateLongGt(value, (Long) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.LongGe:
-                            validateLongGe(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            validateLongGe(value, (Long) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.LongLt:
-                            validateLongLt(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            validateLongLt(value, (Long) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.LongLe:
-                            validateLongLe(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            validateLongLe(value, (Long) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.LongGtLt:
-                            validateLongGtLt(value, (Long) validatorUnit[1], (Long) validatorUnit[2], validator.reason, aAlias);
+                            validateLongGtLt(value, (Long) validatorUnit[2], (Long) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.LongGeLe:
-                            validateLongGeLe(value, (Long) validatorUnit[1], (Long) validatorUnit[2], validator.reason, aAlias);
+                            validateLongGeLe(value, (Long) validatorUnit[2], (Long) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.LongGtLe:
-                            validateLongGtLe(value, (Long) validatorUnit[1], (Long) validatorUnit[2], validator.reason, aAlias);
+                            validateLongGtLe(value, (Long) validatorUnit[2], (Long) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.LongGeLt:
-                            validateLongGeLt(value, (Long) validatorUnit[1], (Long) validatorUnit[2], validator.reason, aAlias);
+                            validateLongGeLt(value, (Long) validatorUnit[2], (Long) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.LongIn:
-                            validateLongIn(value, (Long[]) validatorUnit[1], validator.reason, aAlias);
+                            validateLongIn(value, (Long[]) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.LongNotIn:
-                            validateLongNotIn(value, (Long[]) validatorUnit[1], validator.reason, aAlias);
+                            validateLongNotIn(value, (Long[]) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.Str:
                             validateStr(value, validator.reason, aAlias);
                             break;
                         case Type.StrEq:
-                            validateStrEq(value, (String) validatorUnit[1], validator.reason, aAlias);
+                            validateStrEq(value, (String) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.StrEqI:
-                            validateStrEqI(value, (String) validatorUnit[1], validator.reason, aAlias);
+                            validateStrEqI(value, (String) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.StrNe:
-                            validateStrNe(value, (String) validatorUnit[1], validator.reason, aAlias);
+                            validateStrNe(value, (String) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.StrNeI:
-                            validateStrNeI(value, (String) validatorUnit[1], validator.reason, aAlias);
+                            validateStrNeI(value, (String) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.StrIn:
-                            validateStrIn(value, (String[]) validatorUnit[1], validator.reason, aAlias);
+                            validateStrIn(value, (String[]) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.StrInI:
-                            validateStrInI(value, (String[]) validatorUnit[1], validator.reason, aAlias);
+                            validateStrInI(value, (String[]) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.StrNotIn:
-                            validateStrNotIn(value, (String[]) validatorUnit[1], validator.reason, aAlias);
+                            validateStrNotIn(value, (String[]) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.StrNotInI:
-                            validateStrNotInI(value, (String[]) validatorUnit[1], validator.reason, aAlias);
+                            validateStrNotInI(value, (String[]) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.StrLen:
-                            validateStrLen(value, (Integer) validatorUnit[1], validator.reason, aAlias);
+                            validateStrLen(value, (Integer) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.StrLenGe:
-                            validateStrLenGe(value, (Integer) validatorUnit[1], validator.reason, aAlias);
+                            validateStrLenGe(value, (Integer) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.StrLenLe:
-                            validateStrLenLe(value, (Integer) validatorUnit[1], validator.reason, aAlias);
+                            validateStrLenLe(value, (Integer) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.StrLenGeLe:
-                            validateStrLenGeLe(value, (Integer) validatorUnit[1], (Integer) validatorUnit[2], validator.reason, aAlias);
+                            validateStrLenGeLe(value, (Integer) validatorUnit[2], (Integer) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.Bool:
                             validateBool(value, validator.reason, aAlias);
@@ -826,34 +828,34 @@ public class Validation {
                             validateMac(value, validator.reason, aAlias);
                             break;
                         case Type.Regexp:
-                            validateRegexp(value, (Pattern) validatorUnit[1], validator.reason, aAlias);
+                            validateRegexp(value, (Pattern) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.Float:
                             validateFloat(value, validator.reason, aAlias);
                             break;
                         case Type.FloatGt:
-                            validateFloatGt(value, (Double) validatorUnit[1], validator.reason, aAlias);
+                            validateFloatGt(value, (Double) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.FloatGe:
-                            validateFloatGe(value, (Double) validatorUnit[1], validator.reason, aAlias);
+                            validateFloatGe(value, (Double) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.FloatLt:
-                            validateFloatLt(value, (Double) validatorUnit[1], validator.reason, aAlias);
+                            validateFloatLt(value, (Double) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.FloatLe:
-                            validateFloatLe(value, (Double) validatorUnit[1], validator.reason, aAlias);
+                            validateFloatLe(value, (Double) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.FloatGtLt:
-                            validateFloatGtLt(value, (Double) validatorUnit[1], (Double) validatorUnit[2], validator.reason, aAlias);
+                            validateFloatGtLt(value, (Double) validatorUnit[2], (Double) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.FloatGeLe:
-                            validateFloatGeLe(value, (Double) validatorUnit[1], (Double) validatorUnit[2], validator.reason, aAlias);
+                            validateFloatGeLe(value, (Double) validatorUnit[2], (Double) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.FloatGtLe:
-                            validateFloatGtLe(value, (Double) validatorUnit[1], (Double) validatorUnit[2], validator.reason, aAlias);
+                            validateFloatGtLe(value, (Double) validatorUnit[2], (Double) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.FloatGeLt:
-                            validateFloatGeLt(value, (Double) validatorUnit[1], (Double) validatorUnit[2], validator.reason, aAlias);
+                            validateFloatGeLt(value, (Double) validatorUnit[2], (Double) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.List:
                         case Type.Arr:
@@ -861,19 +863,19 @@ public class Validation {
                             break;
                         case Type.ListLen:
                         case Type.ArrLen:
-                            validateArrLen(value, (Integer) validatorUnit[1], validator.reason, aAlias);
+                            validateArrLen(value, (Integer) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.ListLenGe:
                         case Type.ArrLenGe:
-                            validateArrLenGe(value, (Integer) validatorUnit[1], validator.reason, aAlias);
+                            validateArrLenGe(value, (Integer) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.ListLenLe:
                         case Type.ArrLenLe:
-                            validateArrLenLe(value, (Integer) validatorUnit[1], validator.reason, aAlias);
+                            validateArrLenLe(value, (Integer) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.ListLenGeLe:
                         case Type.ArrLenGeLe:
-                            validateArrLenGeLe(value, (Integer) validatorUnit[1], (Integer) validatorUnit[2], validator.reason, aAlias);
+                            validateArrLenGeLe(value, (Integer) validatorUnit[2], (Integer) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.Map:
                             validateMap(value, validator.reason, aAlias);
@@ -882,32 +884,32 @@ public class Validation {
                             validateDate(value, validator.reason, aAlias);
                             break;
                         case Type.DateFrom:
-                            validateDateFrom(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            validateDateFrom(value, (Long) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.DateTo:
-                            validateDateTo(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            validateDateTo(value, (Long) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.DateFromTo:
-                            validateDateFromTo(value, (Long) validatorUnit[1], (Long) validatorUnit[2], validator.reason, aAlias);
+                            validateDateFromTo(value, (Long) validatorUnit[2], (Long) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.DateTime:
                             validateDateTime(value, validator.reason, aAlias);
                             break;
                         case Type.DateTimeFrom:
-                            validateDateTimeFrom(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            validateDateTimeFrom(value, (Long) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.DateTimeTo:
-                            validateDateTimeTo(value, (Long) validatorUnit[1], validator.reason, aAlias);
+                            validateDateTimeTo(value, (Long) validatorUnit[2], validator.reason, aAlias);
                             break;
                         case Type.DateTimeFromTo:
-                            validateDateTimeFromTo(value, (Long) validatorUnit[1], (Long) validatorUnit[2], validator.reason, aAlias);
+                            validateDateTimeFromTo(value, (Long) validatorUnit[2], (Long) validatorUnit[3], validator.reason, aAlias);
                             break;
                         case Type.ByteLen:
                         case Type.ByteLenGe:
                         case Type.ByteLenLe:
                         case Type.ByteLenGeLe:
                         default:
-                            throw new ValidationException("无法识别的验证器类型“" + validatorType + "”"); // 不应该出现这种情况
+                            throw new ValidationException("无法识别的验证器\"" + validatorName + "\""); // 不应该出现这种情况
                     }
 
                 }
@@ -1021,7 +1023,7 @@ public class Validation {
                 } while (true);
                 String regexp = segment.substring(8, segment.length() - 1);
                 Pattern p = Pattern.compile(regexp);
-                units.add(new Object[]{Type.Regexp, p}); // 正则表达式要去掉首尾的斜杠/
+                units.add(new Object[]{Type.Regexp, "Regexp", p}); // 正则表达式要去掉首尾的斜杠/
             } // end if (segment.startsWith("Regexp:")) { // 是正则表达式
             else { // 非正则表达式验证器
                 int pos = segment.indexOf(':');
@@ -1032,7 +1034,7 @@ public class Validation {
                         required = true;
                     } else {
                         int validatorType = Type.fromNameOrThrow(segment);
-                        units.add(new Object[]{validatorType});
+                        units.add(new Object[]{validatorType, segment});
                     }
                 } else { // 有冒号:, 是带参数的验证器
                     if (pos == 0)
@@ -1053,7 +1055,7 @@ public class Validation {
                         case Type.IntLt:
                         case Type.IntLe: {
                             int v = parseParamIntOrThrow(p, validatorName);
-                            validatorUnit = new Object[]{validatorType, v};
+                            validatorUnit = new Object[]{validatorType, validatorName, v};
                             break;
                         }
                         case Type.LongEq:
@@ -1063,7 +1065,7 @@ public class Validation {
                         case Type.LongLt:
                         case Type.LongLe: {
                             long v = parseParamLongOrThrow(p, validatorName);
-                            validatorUnit = new Object[]{validatorType, v};
+                            validatorUnit = new Object[]{validatorType, validatorName, v};
                             break;
                         }
                         case Type.StrLen:
@@ -1079,7 +1081,7 @@ public class Validation {
                         case Type.ArrLenGe:
                         case Type.ArrLenLe:{
                             int v = parseParamIntNonNegativeOrThrow(p, validatorName);
-                            validatorUnit = new Object[]{validatorType, v};
+                            validatorUnit = new Object[]{validatorType, validatorName, v};
                             break;
                         }
                         case Type.IntGtLt:
@@ -1091,7 +1093,7 @@ public class Validation {
                                 throwFormatError(validatorName);
                             int v1 = parseParamIntOrThrow(vals[0], validatorName);
                             int v2 = parseParamIntOrThrow(vals[1], validatorName);
-                            validatorUnit = new Object[]{validatorType, v1, v2};
+                            validatorUnit = new Object[]{validatorType, validatorName, v1, v2};
                             break;
                         }
                         case Type.LongGtLt:
@@ -1103,7 +1105,7 @@ public class Validation {
                                 throwFormatError(validatorName);
                             long v1 = parseParamLongOrThrow(vals[0], validatorName);
                             long v2 = parseParamLongOrThrow(vals[1], validatorName);
-                            validatorUnit = new Object[]{validatorType, v1, v2};
+                            validatorUnit = new Object[]{validatorType, validatorName, v1, v2};
                             break;
                         }
                         case Type.StrLenGeLe:
@@ -1115,7 +1117,7 @@ public class Validation {
                                 throwFormatError(validatorName);
                             int v1 = parseParamIntNonNegativeOrThrow(vals[0], validatorName);
                             int v2 = parseParamIntNonNegativeOrThrow(vals[1], validatorName);
-                            validatorUnit = new Object[]{validatorType, v1, v2};
+                            validatorUnit = new Object[]{validatorType, validatorName, v1, v2};
                             break;
                         }
                         case Type.IntIn:
@@ -1123,7 +1125,7 @@ public class Validation {
                             Integer[] ints = parseParamIntArray(p);
                             if (ints == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, ints};
+                            validatorUnit = new Object[]{validatorType, validatorName, ints};
                             break;
                         }
                         case Type.LongIn:
@@ -1131,14 +1133,14 @@ public class Validation {
                             Long[] longs = parseParamLongArray(p);
                             if (longs == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, longs};
+                            validatorUnit = new Object[]{validatorType, validatorName, longs};
                             break;
                         }
                         case Type.StrEq:
                         case Type.StrNe:
                         case Type.StrEqI:
                         case Type.StrNeI: {
-                            validatorUnit = new Object[]{validatorType, p};
+                            validatorUnit = new Object[]{validatorType, validatorName, p};
                             break;
                         }
                         case Type.StrIn:
@@ -1146,7 +1148,7 @@ public class Validation {
                         case Type.StrInI:
                         case Type.StrNotInI: {
                             String[] strings = parseParamStrArray(p);
-                            validatorUnit = new Object[]{validatorType, strings};
+                            validatorUnit = new Object[]{validatorType, validatorName, strings};
                             break;
                         }
                         case Type.IfIntEq:
@@ -1160,7 +1162,7 @@ public class Validation {
                             Object[] params = parseIfXxxWith1Param1Int(p, validatorName);
                             if (params == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, params[0], params[1]};
+                            validatorUnit = new Object[]{validatorType, validatorName, params[0], params[1]};
                             countOfIfs++;
                             break;
                         }
@@ -1171,7 +1173,7 @@ public class Validation {
                             Object[] params = parseIfXxxWith1ParamNInts(p, validatorName);
                             if (params == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, params[0], params[1]};
+                            validatorUnit = new Object[]{validatorType, validatorName, params[0], params[1]};
                             countOfIfs++;
                             break;
                         }
@@ -1186,7 +1188,7 @@ public class Validation {
                             Object[] params = parseIfXxxWith1Param1Long(p, validatorName);
                             if (params == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, params[0], params[1]};
+                            validatorUnit = new Object[]{validatorType, validatorName, params[0], params[1]};
                             countOfIfs++;
                             break;
                         }
@@ -1197,7 +1199,7 @@ public class Validation {
                             Object[] params = parseIfXxxWith1ParamNLongs(p, validatorName);
                             if (params == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, params[0], params[1]};
+                            validatorUnit = new Object[]{validatorType, validatorName, params[0], params[1]};
                             countOfIfs++;
                             break;
                         }
@@ -1212,7 +1214,7 @@ public class Validation {
                             Object[] params = parseIfXxxWith1Param1Str(p, validatorName);
                             if (params == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, params[0], params[1]};
+                            validatorUnit = new Object[]{validatorType, validatorName, params[0], params[1]};
                             countOfIfs++;
                             break;
                         }
@@ -1223,7 +1225,7 @@ public class Validation {
                             Object[] params = parseIfXxxWith1ParamNStrs(p, validatorName);
                             if (params == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, params[0], params[1]};
+                            validatorUnit = new Object[]{validatorType, validatorName, params[0], params[1]};
                             countOfIfs++;
                             break;
                         }
@@ -1238,7 +1240,7 @@ public class Validation {
                             Object[] params = ValidationUtils.split(p, ',');
                             if (params.length != 1)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, params[0]};
+                            validatorUnit = new Object[]{validatorType, validatorName, params[0]};
                             countOfIfs++;
                             break;
                         }
@@ -1249,7 +1251,7 @@ public class Validation {
                             Double v = parseParamDouble(p);
                             if (v == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, v};
+                            validatorUnit = new Object[]{validatorType, validatorName, v};
                             break;
                         }
                         case Type.FloatGtLt:
@@ -1263,7 +1265,7 @@ public class Validation {
                             Double d2 = parseParamDouble(strs[1]);
                             if (d1 == null || d2 == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, d1, d2};
+                            validatorUnit = new Object[]{validatorType, validatorName, d1, d2};
                             break;
                         }
                         case Type.DateFrom:
@@ -1271,7 +1273,7 @@ public class Validation {
                             Long timestamp = parseParamDateToTimestamp(p);
                             if (timestamp == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, timestamp};
+                            validatorUnit = new Object[]{validatorType, validatorName, timestamp};
                             break;
                         }
                         case Type.DateFromTo: {
@@ -1282,7 +1284,7 @@ public class Validation {
                             Long timestamp2 = parseParamDateToTimestamp(strs[1]);
                             if (timestamp1 == null || timestamp2 == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, timestamp1, timestamp2};
+                            validatorUnit = new Object[]{validatorType, validatorName, timestamp1, timestamp2};
                             break;
                         }
                         case Type.DateTimeFrom:
@@ -1290,7 +1292,7 @@ public class Validation {
                             Long timestamp = parseParamDateTimeToTimestamp(p);
                             if (timestamp == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, timestamp};
+                            validatorUnit = new Object[]{validatorType, validatorName, timestamp};
                             break;
                         }
                         case Type.DateTimeFromTo: {
@@ -1301,7 +1303,7 @@ public class Validation {
                             Long timestamp2 = parseParamDateTimeToTimestamp(strs[1]);
                             if (timestamp1 == null || timestamp2 == null)
                                 throwFormatError(validatorName);
-                            validatorUnit = new Object[]{validatorType, timestamp1, timestamp2};
+                            validatorUnit = new Object[]{validatorType, validatorName, timestamp1, timestamp2};
                             break;
                         }
                         case Type.FileMimes: {
