@@ -47,6 +47,9 @@ public class Validation {
                 if (map != null)
                     return map;
 
+                if (request.getContentLength() == 0)
+                    return new HashMap<>(0);
+
                 TypeFactory factory = TypeFactory.defaultInstance();
                 MapType type = factory.constructMapType(HashMap.class, String.class, Object.class);
 
